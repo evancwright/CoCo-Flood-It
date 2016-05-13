@@ -1,0 +1,12 @@
+#!/bin/sh
+ 
+echo "Building FLOODIT.BIN" 
+rm FLOODIT.BIN
+echo "assembling code"
+lwasm  --6809 FLOODIT.ASM --list=floodit.list --output=FLOODIT.BIN 
+echo "copying file to disk image"
+writecocofile   -b EVAN.DSK FLOODIT.BIN 
+echo "copying .dsk file to h: ..."
+cp EVAN.DSK /cygdrive/h
+
+
