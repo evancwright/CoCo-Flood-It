@@ -46,7 +46,7 @@ VRAM EQU 1024
 START
 ;START_DATA: 
 	LDU #0x7FFF ; setup user stack
-	
+	CLR TURNS	; SET TURNS TO 0	
 	; set user stack to top of user ram
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -212,6 +212,7 @@ CLS:
 ;START_FILL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 START_FILL:
+	INC TURNS
 	JSR CLEAR_FLAGS
 	;SAVE THE ORIGNAL COLOR
 	LDA VRAM
@@ -410,6 +411,7 @@ NEXTFIB:
 OLD_COLOR .db 0	;	ORIGINAL COLOR OF 0,0 BEFORE BUCKET FILL
 NEW_COLOR .db 0	;	COLOR TO BUCKET FILL WITH
 CLR_COLOR .db 32	
+TURNS .db 0	;
 TEMP	.db 0
 TEMP_WORD .dw 0
 X_COORD .db 0
@@ -453,5 +455,4 @@ INSTRUCTIONS10:
 INSTRUCTIONS_11:
 	.STRZ "PRESS SPACE TO RETURN TO GAME."
 	
-
 	END START
