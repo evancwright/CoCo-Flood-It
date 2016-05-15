@@ -48,6 +48,10 @@ START
 ;START_DATA: 
 	LDU #0x7FFF ; setup user stack
 	CLR TURNS	; SET TURNS TO 0	
+	LDA BLACK
+	STA CLR_COLOR
+	LDY #SCREEN_BUFFER_2	; CLEAR BUFFER 2
+	JSR CLS
 	; set user stack to top of user ram
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LOOP TO FILL THE SCREEN WITH ALL 'A' CHARS
@@ -75,6 +79,7 @@ KB_LOOP:
 	BEQ DONE
 	CMPA #KEY_H
 	BNE @a
+	LDY #SCREEN_BUFFER
 	JSR SWITCH_BUFFERS
 	BRA KB_LOOP
 @a	CMPA #KEY_B
@@ -171,7 +176,7 @@ DRAW_INSTRUCTIONS:
 	LDA #BLACK
 	STA CLR_COLOR
 	LDX #SCREEN_BUFFER
-	JSR CLS
+	JSR  CLS
 	LDX #INSTRUCTIONS1
 	LDY #SCREEN_BUFFER
 	JSR STRCPY
@@ -222,7 +227,12 @@ START_FILL:
 	PSHU A
 	PSHU A
 	JSR BUCKET_FILL
-	RTS
+	JSR CHECK_WIN
+	PULU A 	; GET RETURN CODE
+	CMPA #1
+	BNE @no
+	JSR PLAY_WIN_SND	;  PLAY VICTORY MUSIC
+@no	RTS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;BUCKET_FILL
@@ -347,11 +357,12 @@ CHECK_WIN:
 ; GRAPHICS BUFFER 1. THIS IS REQUIRED PRIOR
 ; TO DISPLAYING THE HELP SCREEN SO THE BOARD
 ; STATE DOESN'T GET CLOBBERED.
+;
+; Y CONTAINS ADDRESS OF OFFSCREEN BUFFER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SWITCH_BUFFERS:
-	PSHS A,X,Y
+	PSHS A,X
 	LDX #VRAM
-	LDY #SCREEN_BUFFER
 @a	LDA ,X		;SAVE SCREEN BYTE
 	STA TEMP
 	LDA ,Y		;LOAD BUFFER BYTE
@@ -362,9 +373,37 @@ SWITCH_BUFFERS:
 	LDA ,Y+ ; INC Y
 	CMPX #VRAM_END ; DONE?
 	BNE @a
-	PULS Y,X,A
+	PULS X,A
 	RTS
 	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;PLAY_WIN_SND	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+PLAY_WIN_SND:
+	LDA #6
+@loop
+	PSHU A	;	SAVE LP COUNTER
+	LDY #SCREEN_BUFFER_2
+	JSR SWITCH_BUFFERS	
+	JSR WASTE_TIME		; DELAY BETWEEN BLINKS
+	PULU A	;	RESTORE LP COUNTER
+	DECA
+	CMPA #0
+	BNE @loop
+	RTS
+	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;	WASTE TIME
+;	AN EMPTY LOOP TO WASTE TIME.  USED FOR
+;	THE BLINKING WHEN THE PLAYER WINS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+WASTE_TIME:
+	LDA #FF
+@lp	DECA	
+	CMPA #0
+	BNE @lp
+	RTS
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; STRCPY:
 ; SRC AND DEST NEED TO BE STORED IN X,Y
@@ -424,6 +463,8 @@ FLAGS .RS 480	;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 SCREEN_BUFFER:
 	.RS 512
+SCREEN_BUFFER_2: ;	USED FOR BLACK SCREEN WHEN BLINKING
+	.RS 512	
 INSTRUCTIONS1:
 	.STRZ "THE OBJECTIVE IS TO MAKE THE "	
 INSTRUCTIONS2:
