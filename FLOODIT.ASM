@@ -398,7 +398,7 @@ PLAY_WIN_SND:
 ;	THE BLINKING WHEN THE PLAYER WINS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 WASTE_TIME:
-	LDA #FF
+	LDA #0xFF
 @lp	DECA	
 	CMPA #0
 	BNE @lp
