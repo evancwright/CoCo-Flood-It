@@ -48,26 +48,11 @@ START
 ;START_DATA: 
 	LDU #0x7FFF ; setup user stack
 	CLR TURNS	; SET TURNS TO 0	
-	LDA BLACK
+	LDA #BLACK
 	STA CLR_COLOR
-	LDY #SCREEN_BUFFER_2	; CLEAR BUFFER 2
+	LDX #SCREEN_BUFFER_2	; CLEAR BUFFER 2
 	JSR CLS
-	; set user stack to top of user ram
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; LOOP TO FILL THE SCREEN WITH ALL 'A' CHARS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	LDD #0		; loop counter
-	LDY #1024	; load addr to copy to
-fill_loop_top:
-	PSHS D		; save A (loop counter)
-	JSR RND5	;GET RND COLOR
-	LDX NEXTFIB-1
-	LDA COLORS,X
-	STA ,Y+	; copy char to location stored in Y increment Y
-	PULS D	; restore A (loop counter)
-	ADDD	#1 ; increment loop counter
-	CMPD #480	; done (hit bottom of screen)?
-	BNE fill_loop_top
+	JSR CREATE_BOARD
 	JSR DRAW_LEGEND
 	JSR DRAW_INSTRUCTIONS ; DRAWS OFFSCREEN
 KB_LOOP:
@@ -106,13 +91,13 @@ KB_LOOP:
 	STA NEW_COLOR	; R KEY 
 	JSR START_FILL
 	JMP KB_LOOP
-@e	CMPA #KEY_G	; X KEY 
+@e	CMPA #KEY_G		; G KEY 
 	BNE @f
 	LDA #GREEN
 	STA NEW_COLOR	
 	JSR START_FILL
 	JMP KB_LOOP	
-@f	CMPA #KEY_X	; X KEY 
+@f	CMPA #KEY_X		; X KEY 
 	BNE @g
 	LDA #BLACK
 	STA NEW_COLOR	
@@ -126,6 +111,23 @@ DONE:
 	JSR CLS
 	RTS ; return
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; LOOP TO FILL THE SCREEN WITH ALL 'A' CHARS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+CREATE_BOARD:
+	LDD #0		; loop counter
+	LDY #1024	; load addr to copy to
+@lp	PSHS D		; save A (loop counter)
+	JSR RND5	;GET RND COLOR
+	LDX NEXTFIB-1
+	LDA COLORS,X
+	STA ,Y+	; copy char to location stored in Y increment Y
+	PULS D	; restore A (loop counter)
+	ADDD	#1 ; increment loop counter
+	CMPD #480	; done (hit bottom of screen)?
+	BNE @lp
+	RTS
+	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;PUTS THE NEXT FIBONACCI NUMBER IN A AND NEXTFIB
 ;NO REGISTERS AFFECTED
@@ -343,7 +345,7 @@ CHECK_WIN:
 	CMPA TEMP	;	DOES IT MATCH THE 1ST CHAR
 	BNE @no 	;	FOUND A CHAR THAT DIDN'T MATCH THE FIRST
 	LDA ,Y+		;	INC LP COUNTER
-	CMPY #480	;	HIT END?
+	CMPY #479	;	HIT END?
 	BNE @lp		;	LOOP
 	LDA #1		;	IF GOT HERE, LOOP DONE, ALL CHARS ON SCRN ARE THE SAME		
 	BRA @r	;	DONE
@@ -380,16 +382,9 @@ SWITCH_BUFFERS:
 ;PLAY_WIN_SND	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 PLAY_WIN_SND:
-	LDA #6
-@loop
-	PSHU A	;	SAVE LP COUNTER
-	LDY #SCREEN_BUFFER_2
-	JSR SWITCH_BUFFERS	
-	JSR WASTE_TIME		; DELAY BETWEEN BLINKS
-	PULU A	;	RESTORE LP COUNTER
-	DECA
-	CMPA #0
-	BNE @loop
+	LDA #0
+	STA TURNS
+	JSR CREATE_BOARD	
 	RTS
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
