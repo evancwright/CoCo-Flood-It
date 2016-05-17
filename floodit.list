@@ -3,520 +3,557 @@
                       (      FLOODIT.ASM):00003         ;EVAN C. WRIGHT, 2016
                       (      FLOODIT.ASM):00004         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      A1CB             (      FLOODIT.ASM):00005         KBSCAN  EQU $A1CB
-     05E0             (      FLOODIT.ASM):00006         LAST_LINE EQU 1504 
+     05E0             (      FLOODIT.ASM):00006         LAST_LINE EQU (1024+480) 
      0600             (      FLOODIT.ASM):00007         VRAM_END EQU (1024+512)
-     0003             (      FLOODIT.ASM):00008         KEY_ESC EQU 3
-     0042             (      FLOODIT.ASM):00009         KEY_B EQU 66
-     0044             (      FLOODIT.ASM):00010         KEY_D EQU 68
-     0045             (      FLOODIT.ASM):00011         KEY_E EQU 69
-     0047             (      FLOODIT.ASM):00012         KEY_G EQU 71
-     0048             (      FLOODIT.ASM):00013         KEY_H EQU 72
-     0049             (      FLOODIT.ASM):00014         KEY_I EQU 73
-     004C             (      FLOODIT.ASM):00015         KEY_L EQU 76
-     0050             (      FLOODIT.ASM):00016         KEY_P EQU 80
-     0051             (      FLOODIT.ASM):00017         KEY_Q EQU 81
-     0052             (      FLOODIT.ASM):00018         KEY_R EQU 82
-     0054             (      FLOODIT.ASM):00019         KEY_T EQU 84
-     0055             (      FLOODIT.ASM):00020         KEY_U EQU 85
-     0057             (      FLOODIT.ASM):00021         KEY_W EQU 87
-     0058             (      FLOODIT.ASM):00022         KEY_X EQU 88
-     0059             (      FLOODIT.ASM):00023         KEY_Y EQU 89
-     0032             (      FLOODIT.ASM):00024         KEY_2 EQU 50
-     0035             (      FLOODIT.ASM):00025         KEY_5 EQU 53
-     003D             (      FLOODIT.ASM):00026         KEY_EQUALS EQU 61
-     002F             (      FLOODIT.ASM):00027         KEY_SLASH EQU 47
-     0060             (      FLOODIT.ASM):00028         GREEN EQU 96
-     0020             (      FLOODIT.ASM):00029         DARK_GREEN EQU 32
-     0080             (      FLOODIT.ASM):00030         BLACK EQU 128
-     00CF             (      FLOODIT.ASM):00031         WHITE EQU 207
-     009F             (      FLOODIT.ASM):00032         YELLOW EQU 159
-     00AF             (      FLOODIT.ASM):00033         BLUE EQU 175
-     00DF             (      FLOODIT.ASM):00034         LIGHT_BLUE EQU 223
-     00BF             (      FLOODIT.ASM):00035         RED EQU 191
-     0400             (      FLOODIT.ASM):00036         VRAM EQU 1024
-     0032             (      FLOODIT.ASM):00037         MAX_TURNS EQU 50
-                      (      FLOODIT.ASM):00038         ;PROG_LENGTH set END_DATA-START_DATA
-                      (      FLOODIT.ASM):00039                 
-                      (      FLOODIT.ASM):00040                 ; .BIN FILE HEADER
-                      (      FLOODIT.ASM):00041         ;       .db 0x00        ;
-                      (      FLOODIT.ASM):00042         ;       .dw PROG_LENGTH
-                      (      FLOODIT.ASM):00043         ;       .db 0x0E        ; address to load prog into
-                      (      FLOODIT.ASM):00044         ;       .db 0x00
-                      (      FLOODIT.ASM):00045         
-                      (      FLOODIT.ASM):00046                 ORG 0x0E00 ; START CODE HERE
-0E00                  (      FLOODIT.ASM):00047         START
-                      (      FLOODIT.ASM):00048         ;START_DATA: 
-0E00 CE7FFF           (      FLOODIT.ASM):00049                 LDU #0x7FFF ; setup user stack
-0E03 7F107D           (      FLOODIT.ASM):00050                 CLR TURNS       ; SET TURNS TO 0        
-0E06 9680             (      FLOODIT.ASM):00051                 LDA BLACK
-0E08 B7107C           (      FLOODIT.ASM):00052                 STA CLR_COLOR
-0E0B 8E1484           (      FLOODIT.ASM):00053                 LDX #SCREEN_BUFFER_2    ; CLEAR BUFFER 2
-0E0E BD0F39           (      FLOODIT.ASM):00054                 JSR CLS
-0E11 8E0400           (      FLOODIT.ASM):00055                 LDX #VRAM       ; CLEAR BUFFER 2
-0E14 BD0F39           (      FLOODIT.ASM):00056                 JSR CLS
-                      (      FLOODIT.ASM):00057         ;       JSR CREATE_BOARD
-0E17 BD0EE6           (      FLOODIT.ASM):00058                 JSR DRAW_LEGEND
-0E1A BD0EF1           (      FLOODIT.ASM):00059                 JSR DRAW_INSTRUCTIONS ; DRAWS OFFSCREEN
-0E1D                  (      FLOODIT.ASM):00060         KB_LOOP:
-0E1D BDA1CB           (      FLOODIT.ASM):00061                 JSR KBSCAN  ; PUTS KEYCODE INTO A - 0 = NO KEY
-0E20 9100             (      FLOODIT.ASM):00062                 CMPA 0  
-0E22 27F9             (      FLOODIT.ASM):00063                 BEQ KB_LOOP     ; IF 0 (NO KEY), REPEAT LOOP
-                      (      FLOODIT.ASM):00064                 ;KEY WAS PRESSED
-0E24 8103             (      FLOODIT.ASM):00065                 CMPA #KEY_ESC
-0E26 2767             (      FLOODIT.ASM):00066                 BEQ DONE
-0E28 8148             (      FLOODIT.ASM):00067                 CMPA #KEY_H
-0E2A 2609             (      FLOODIT.ASM):00068                 BNE @a
-0E2C 108E1284         (      FLOODIT.ASM):00069                 LDY #SCREEN_BUFFER
-0E30 BD1030           (      FLOODIT.ASM):00070                 JSR SWITCH_BUFFERS
-0E33 20E8             (      FLOODIT.ASM):00071                 BRA KB_LOOP
-0E35 8142             (      FLOODIT.ASM):00072         @a      CMPA #KEY_B
-0E37 260A             (      FLOODIT.ASM):00073                 BNE @b
-0E39 86AF             (      FLOODIT.ASM):00074                 LDA #BLUE
-0E3B B7107B           (      FLOODIT.ASM):00075                 STA NEW_COLOR   ; B KEY 
-0E3E BD0F4F           (      FLOODIT.ASM):00076                 JSR START_FILL
-0E41 20DA             (      FLOODIT.ASM):00077                 BRA KB_LOOP
-0E43 8159             (      FLOODIT.ASM):00078         @b      CMPA #KEY_Y             ; Y KEY - YELLOW
-0E45 260A             (      FLOODIT.ASM):00079                 BNE @c
-0E47 869F             (      FLOODIT.ASM):00080                 LDA #YELLOW
-0E49 B7107B           (      FLOODIT.ASM):00081                 STA NEW_COLOR   
-0E4C BD0F4F           (      FLOODIT.ASM):00082                 JSR START_FILL
-0E4F 20CC             (      FLOODIT.ASM):00083                 BRA KB_LOOP
-0E51 8157             (      FLOODIT.ASM):00084         @c      CMPA #KEY_W             ; W KEY - WHITE
-0E53 260A             (      FLOODIT.ASM):00085                 BNE @d
-0E55 86CF             (      FLOODIT.ASM):00086                 LDA #WHITE
-0E57 B7107B           (      FLOODIT.ASM):00087                 STA NEW_COLOR
-0E5A BD0F4F           (      FLOODIT.ASM):00088                 JSR START_FILL
-0E5D 20BE             (      FLOODIT.ASM):00089                 BRA KB_LOOP
-0E5F 8152             (      FLOODIT.ASM):00090         @d      CMPA #KEY_R             ; R RED
-0E61 260B             (      FLOODIT.ASM):00091                 BNE @e
-0E63 86BF             (      FLOODIT.ASM):00092                 LDA #RED
-0E65 B7107B           (      FLOODIT.ASM):00093                 STA NEW_COLOR   ; R KEY 
-0E68 BD0F4F           (      FLOODIT.ASM):00094                 JSR START_FILL
-0E6B 7E0E1D           (      FLOODIT.ASM):00095                 JMP KB_LOOP
-0E6E 8147             (      FLOODIT.ASM):00096         @e      CMPA #KEY_G     ; X KEY 
-0E70 260B             (      FLOODIT.ASM):00097                 BNE @f
-0E72 8660             (      FLOODIT.ASM):00098                 LDA #GREEN
-0E74 B7107B           (      FLOODIT.ASM):00099                 STA NEW_COLOR   
-0E77 BD0F4F           (      FLOODIT.ASM):00100                 JSR START_FILL
-0E7A 7E0E1D           (      FLOODIT.ASM):00101                 JMP KB_LOOP     
-0E7D 8158             (      FLOODIT.ASM):00102         @f      CMPA #KEY_X     ; X KEY 
-0E7F 260B             (      FLOODIT.ASM):00103                 BNE @g
-0E81 8680             (      FLOODIT.ASM):00104                 LDA #BLACK
-0E83 B7107B           (      FLOODIT.ASM):00105                 STA NEW_COLOR   
-0E86 BD0F4F           (      FLOODIT.ASM):00106                 JSR START_FILL
-0E89 7E0E1D           (      FLOODIT.ASM):00107                 JMP KB_LOOP     
-0E8C 7E0E1D           (      FLOODIT.ASM):00108         @g      JMP KB_LOOP
-0E8F                  (      FLOODIT.ASM):00109         DONE:   
-0E8F 8660             (      FLOODIT.ASM):00110                 LDA #GREEN
-0E91 B7107C           (      FLOODIT.ASM):00111                 STA CLR_COLOR
-0E94 8E0400           (      FLOODIT.ASM):00112                 LDX #VRAM
-0E97 BD0F39           (      FLOODIT.ASM):00113                 JSR CLS
-0E9A 39               (      FLOODIT.ASM):00114                 RTS ; return
-                      (      FLOODIT.ASM):00115         
-                      (      FLOODIT.ASM):00116         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00117         ; LOOP TO FILL THE SCREEN WITH ALL 'A' CHARS
-                      (      FLOODIT.ASM):00118         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0E9B                  (      FLOODIT.ASM):00119         CREATE_BOARD:
-0E9B CC0000           (      FLOODIT.ASM):00120                 LDD #0          ; loop counter
-0E9E 108E0400         (      FLOODIT.ASM):00121                 LDY #1024       ; load addr to copy to
-0EA2 3406             (      FLOODIT.ASM):00122         @lp     PSHS D          ; save A (loop counter)
-0EA4 BD0EBC           (      FLOODIT.ASM):00123                 JSR RND5        ;GET RND COLOR
-0EA7 BE1077           (      FLOODIT.ASM):00124                 LDX NEXTFIB-1
-0EAA A689106F         (      FLOODIT.ASM):00125                 LDA COLORS,X
-0EAE A7A0             (      FLOODIT.ASM):00126                 STA ,Y+ ; copy char to location stored in Y increment Y
-0EB0 3506             (      FLOODIT.ASM):00127                 PULS D  ; restore A (loop counter)
-0EB2 C30001           (      FLOODIT.ASM):00128                 ADDD    #1 ; increment loop counter
-0EB5 108301E0         (      FLOODIT.ASM):00129                 CMPD #480       ; done (hit bottom of screen)?
-0EB9 26E7             (      FLOODIT.ASM):00130                 BNE @lp
-0EBB 39               (      FLOODIT.ASM):00131                 RTS
-                      (      FLOODIT.ASM):00132                 
-                      (      FLOODIT.ASM):00133         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00134         ;PUTS THE NEXT FIBONACCI NUMBER IN A AND NEXTFIB
-                      (      FLOODIT.ASM):00135         ;NO REGISTERS AFFECTED
-                      (      FLOODIT.ASM):00136         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0EBC                  (      FLOODIT.ASM):00137         RND5:
-0EBC 3402             (      FLOODIT.ASM):00138                 PSHS A
-                      (      FLOODIT.ASM):00139                 ;COMPUTE NEXT
-0EBE B61075           (      FLOODIT.ASM):00140                 LDA FIB1
-0EC1 BB1076           (      FLOODIT.ASM):00141                 ADDA FIB2
-0EC4 B71078           (      FLOODIT.ASM):00142                 STA NEXTFIB
-                      (      FLOODIT.ASM):00143                 ;SHIFT 2 INTO 1
-0EC7 B61076           (      FLOODIT.ASM):00144                 LDA FIB2
-0ECA B71075           (      FLOODIT.ASM):00145                 STA FIB1
-                      (      FLOODIT.ASM):00146                 ;SHIFT NEW INTO 2
-0ECD B61078           (      FLOODIT.ASM):00147                 LDA NEXTFIB
-0ED0 B71076           (      FLOODIT.ASM):00148                 STA FIB2
-                      (      FLOODIT.ASM):00149                 ;MASK OF LEFT BITS
-                      (      FLOODIT.ASM):00150         ;       ANDA RNDMASK
-0ED3 8100             (      FLOODIT.ASM):00151                 CMPA #0
-0ED5 2C01             (      FLOODIT.ASM):00152                 BGE MODLOOP
-0ED7 40               (      FLOODIT.ASM):00153                 NEGA    ; flip to pos
-0ED8                  (      FLOODIT.ASM):00154         MODLOOP:
-0ED8 8106             (      FLOODIT.ASM):00155                 CMPA #6
-0EDA 2B04             (      FLOODIT.ASM):00156                 BMI RNDDONE
-0EDC 8006             (      FLOODIT.ASM):00157                 SUBA #6 ; SUBTRACT 5 OFF TO PUT NUMBER IN RANGE
-0EDE 20F8             (      FLOODIT.ASM):00158                 BRA MODLOOP
-0EE0                  (      FLOODIT.ASM):00159         RNDDONE:
-0EE0 B71078           (      FLOODIT.ASM):00160                 STA NEXTFIB     
-0EE3 3502             (      FLOODIT.ASM):00161                 PULS A
-0EE5 39               (      FLOODIT.ASM):00162                 RTS
-                      (      FLOODIT.ASM):00163                 
-                      (      FLOODIT.ASM):00164         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00165         ;DRAW_LEGEND
+     0420             (      FLOODIT.ASM):00008         LINE_ONE_END EQU (1024+32)
+     0003             (      FLOODIT.ASM):00009         KEY_ESC EQU 3
+     0042             (      FLOODIT.ASM):00010         KEY_B EQU 66
+     0044             (      FLOODIT.ASM):00011         KEY_D EQU 68
+     0045             (      FLOODIT.ASM):00012         KEY_E EQU 69
+     0047             (      FLOODIT.ASM):00013         KEY_G EQU 71
+     0048             (      FLOODIT.ASM):00014         KEY_H EQU 72
+     0049             (      FLOODIT.ASM):00015         KEY_I EQU 73
+     004C             (      FLOODIT.ASM):00016         KEY_L EQU 76
+     0050             (      FLOODIT.ASM):00017         KEY_P EQU 80
+     0051             (      FLOODIT.ASM):00018         KEY_Q EQU 81
+     0052             (      FLOODIT.ASM):00019         KEY_R EQU 82
+     0054             (      FLOODIT.ASM):00020         KEY_T EQU 84
+     0055             (      FLOODIT.ASM):00021         KEY_U EQU 85
+     0057             (      FLOODIT.ASM):00022         KEY_W EQU 87
+     0058             (      FLOODIT.ASM):00023         KEY_X EQU 88
+     0059             (      FLOODIT.ASM):00024         KEY_Y EQU 89
+     0032             (      FLOODIT.ASM):00025         KEY_2 EQU 50
+     0035             (      FLOODIT.ASM):00026         KEY_5 EQU 53
+     003D             (      FLOODIT.ASM):00027         KEY_EQUALS EQU 61
+     002F             (      FLOODIT.ASM):00028         KEY_SLASH EQU 47
+     0060             (      FLOODIT.ASM):00029         GREEN EQU 96
+     0020             (      FLOODIT.ASM):00030         DARK_GREEN EQU 32
+     0080             (      FLOODIT.ASM):00031         BLACK EQU 128
+     00CF             (      FLOODIT.ASM):00032         WHITE EQU 207
+     009F             (      FLOODIT.ASM):00033         YELLOW EQU 159
+     00AF             (      FLOODIT.ASM):00034         BLUE EQU 175
+     00DF             (      FLOODIT.ASM):00035         LIGHT_BLUE EQU 223
+     00BF             (      FLOODIT.ASM):00036         RED EQU 191
+     0400             (      FLOODIT.ASM):00037         VRAM EQU 1024
+     0032             (      FLOODIT.ASM):00038         MAX_TURNS EQU 50
+                      (      FLOODIT.ASM):00039         
+                      (      FLOODIT.ASM):00040                 ORG 0x0E00 ; START CODE HERE
+0E00                  (      FLOODIT.ASM):00041         START 
+0E00 CE7FFF           (      FLOODIT.ASM):00042                 LDU #0x7FFF ; setup user stack
+0E03 7F10C1           (      FLOODIT.ASM):00043                 CLR TURNS       ; SET TURNS TO 0        
+0E06 8680             (      FLOODIT.ASM):00044                 LDA #BLACK
+0E08 B710C0           (      FLOODIT.ASM):00045                 STA CLR_COLOR
+0E0B 8E14C8           (      FLOODIT.ASM):00046                 LDX #SCREEN_BUFFER_2    ; CLEAR BUFFER 2
+0E0E BD0F43           (      FLOODIT.ASM):00047                 JSR CLS
+0E11 BD1059           (      FLOODIT.ASM):00048                 JSR DRAW_INTRO
+0E14 BD0E9B           (      FLOODIT.ASM):00049                 JSR CREATE_BOARD
+0E17 BD0EE6           (      FLOODIT.ASM):00050                 JSR DRAW_LEGEND
+0E1A BD0EF1           (      FLOODIT.ASM):00051                 JSR DRAW_INSTRUCTIONS ; DRAWS OFFSCREEN
+0E1D                  (      FLOODIT.ASM):00052         KB_LOOP:
+0E1D BDA1CB           (      FLOODIT.ASM):00053                 JSR KBSCAN  ; PUTS KEYCODE INTO A - 0 = NO KEY
+0E20 9100             (      FLOODIT.ASM):00054                 CMPA 0  
+0E22 27F9             (      FLOODIT.ASM):00055                 BEQ KB_LOOP     ; IF 0 (NO KEY), REPEAT LOOP
+                      (      FLOODIT.ASM):00056                 ;KEY WAS PRESSED
+0E24 8103             (      FLOODIT.ASM):00057                 CMPA #KEY_ESC
+0E26 2767             (      FLOODIT.ASM):00058                 BEQ DONE
+0E28 8148             (      FLOODIT.ASM):00059                 CMPA #KEY_H
+0E2A 2609             (      FLOODIT.ASM):00060                 BNE @a
+0E2C 108E12C8         (      FLOODIT.ASM):00061                 LDY #SCREEN_BUFFER
+0E30 BD103A           (      FLOODIT.ASM):00062                 JSR SWITCH_BUFFERS
+0E33 20E8             (      FLOODIT.ASM):00063                 BRA KB_LOOP
+0E35 8142             (      FLOODIT.ASM):00064         @a      CMPA #KEY_B
+0E37 260A             (      FLOODIT.ASM):00065                 BNE @b
+0E39 86AF             (      FLOODIT.ASM):00066                 LDA #BLUE
+0E3B B710BF           (      FLOODIT.ASM):00067                 STA NEW_COLOR   ; B KEY 
+0E3E BD0F59           (      FLOODIT.ASM):00068                 JSR START_FILL
+0E41 20DA             (      FLOODIT.ASM):00069                 BRA KB_LOOP
+0E43 8159             (      FLOODIT.ASM):00070         @b      CMPA #KEY_Y             ; Y KEY - YELLOW
+0E45 260A             (      FLOODIT.ASM):00071                 BNE @c
+0E47 869F             (      FLOODIT.ASM):00072                 LDA #YELLOW
+0E49 B710BF           (      FLOODIT.ASM):00073                 STA NEW_COLOR   
+0E4C BD0F59           (      FLOODIT.ASM):00074                 JSR START_FILL
+0E4F 20CC             (      FLOODIT.ASM):00075                 BRA KB_LOOP
+0E51 8157             (      FLOODIT.ASM):00076         @c      CMPA #KEY_W             ; W KEY - WHITE
+0E53 260A             (      FLOODIT.ASM):00077                 BNE @d
+0E55 86CF             (      FLOODIT.ASM):00078                 LDA #WHITE
+0E57 B710BF           (      FLOODIT.ASM):00079                 STA NEW_COLOR
+0E5A BD0F59           (      FLOODIT.ASM):00080                 JSR START_FILL
+0E5D 20BE             (      FLOODIT.ASM):00081                 BRA KB_LOOP
+0E5F 8152             (      FLOODIT.ASM):00082         @d      CMPA #KEY_R             ; R RED
+0E61 260B             (      FLOODIT.ASM):00083                 BNE @e
+0E63 86BF             (      FLOODIT.ASM):00084                 LDA #RED
+0E65 B710BF           (      FLOODIT.ASM):00085                 STA NEW_COLOR   ; R KEY 
+0E68 BD0F59           (      FLOODIT.ASM):00086                 JSR START_FILL
+0E6B 7E0E1D           (      FLOODIT.ASM):00087                 JMP KB_LOOP
+0E6E 8147             (      FLOODIT.ASM):00088         @e      CMPA #KEY_G             ; G KEY 
+0E70 260B             (      FLOODIT.ASM):00089                 BNE @f
+0E72 8660             (      FLOODIT.ASM):00090                 LDA #GREEN
+0E74 B710BF           (      FLOODIT.ASM):00091                 STA NEW_COLOR   
+0E77 BD0F59           (      FLOODIT.ASM):00092                 JSR START_FILL
+0E7A 7E0E1D           (      FLOODIT.ASM):00093                 JMP KB_LOOP     
+0E7D 8158             (      FLOODIT.ASM):00094         @f      CMPA #KEY_X             ; X KEY 
+0E7F 260B             (      FLOODIT.ASM):00095                 BNE @g
+0E81 8680             (      FLOODIT.ASM):00096                 LDA #BLACK
+0E83 B710BF           (      FLOODIT.ASM):00097                 STA NEW_COLOR   
+0E86 BD0F59           (      FLOODIT.ASM):00098                 JSR START_FILL
+0E89 7E0E1D           (      FLOODIT.ASM):00099                 JMP KB_LOOP     
+0E8C 7E0E1D           (      FLOODIT.ASM):00100         @g      JMP KB_LOOP
+0E8F                  (      FLOODIT.ASM):00101         DONE:   
+0E8F 8660             (      FLOODIT.ASM):00102                 LDA #GREEN
+0E91 B710C0           (      FLOODIT.ASM):00103                 STA CLR_COLOR
+0E94 8E0400           (      FLOODIT.ASM):00104                 LDX #VRAM
+0E97 BD0F43           (      FLOODIT.ASM):00105                 JSR CLS
+0E9A 39               (      FLOODIT.ASM):00106                 RTS ; return
+                      (      FLOODIT.ASM):00107         
+                      (      FLOODIT.ASM):00108         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00109         ; LOOP TO FILL THE SCREEN WITH ALL 'A' CHARS
+                      (      FLOODIT.ASM):00110         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0E9B                  (      FLOODIT.ASM):00111         CREATE_BOARD:
+0E9B CC0000           (      FLOODIT.ASM):00112                 LDD #0          ; loop counter
+0E9E 108E0400         (      FLOODIT.ASM):00113                 LDY #1024       ; load addr to copy to
+0EA2 3406             (      FLOODIT.ASM):00114         @lp     PSHS D          ; save A (loop counter)
+0EA4 BD0EBC           (      FLOODIT.ASM):00115                 JSR RND5        ;GET RND COLOR
+0EA7 BE10BB           (      FLOODIT.ASM):00116                 LDX NEXTFIB-1
+0EAA A68910B3         (      FLOODIT.ASM):00117                 LDA COLORS,X
+0EAE A7A0             (      FLOODIT.ASM):00118                 STA ,Y+ ; copy char to location stored in Y increment Y
+0EB0 3506             (      FLOODIT.ASM):00119                 PULS D  ; restore A (loop counter)
+0EB2 C30001           (      FLOODIT.ASM):00120                 ADDD    #1 ; increment loop counter
+0EB5 108301E0         (      FLOODIT.ASM):00121                 CMPD #480       ; done (hit bottom of screen)?
+0EB9 26E7             (      FLOODIT.ASM):00122                 BNE @lp
+0EBB 39               (      FLOODIT.ASM):00123                 RTS
+                      (      FLOODIT.ASM):00124                 
+                      (      FLOODIT.ASM):00125         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00126         ;PUTS THE NEXT FIBONACCI NUMBER IN A AND NEXTFIB
+                      (      FLOODIT.ASM):00127         ;NO REGISTERS AFFECTED
+                      (      FLOODIT.ASM):00128         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0EBC                  (      FLOODIT.ASM):00129         RND5:
+0EBC 3402             (      FLOODIT.ASM):00130                 PSHS A
+                      (      FLOODIT.ASM):00131                 ;COMPUTE NEXT
+0EBE B610B9           (      FLOODIT.ASM):00132                 LDA FIB1
+0EC1 BB10BA           (      FLOODIT.ASM):00133                 ADDA FIB2
+0EC4 B710BC           (      FLOODIT.ASM):00134                 STA NEXTFIB
+                      (      FLOODIT.ASM):00135                 ;SHIFT 2 INTO 1
+0EC7 B610BA           (      FLOODIT.ASM):00136                 LDA FIB2
+0ECA B710B9           (      FLOODIT.ASM):00137                 STA FIB1
+                      (      FLOODIT.ASM):00138                 ;SHIFT NEW INTO 2
+0ECD B610BC           (      FLOODIT.ASM):00139                 LDA NEXTFIB
+0ED0 B710BA           (      FLOODIT.ASM):00140                 STA FIB2
+                      (      FLOODIT.ASM):00141                 ;MASK OF LEFT BITS
+                      (      FLOODIT.ASM):00142         ;       ANDA RNDMASK
+0ED3 8100             (      FLOODIT.ASM):00143                 CMPA #0
+0ED5 2C01             (      FLOODIT.ASM):00144                 BGE MODLOOP
+0ED7 40               (      FLOODIT.ASM):00145                 NEGA    ; flip to pos
+0ED8                  (      FLOODIT.ASM):00146         MODLOOP:
+0ED8 8106             (      FLOODIT.ASM):00147                 CMPA #6
+0EDA 2B04             (      FLOODIT.ASM):00148                 BMI RNDDONE
+0EDC 8006             (      FLOODIT.ASM):00149                 SUBA #6 ; SUBTRACT 5 OFF TO PUT NUMBER IN RANGE
+0EDE 20F8             (      FLOODIT.ASM):00150                 BRA MODLOOP
+0EE0                  (      FLOODIT.ASM):00151         RNDDONE:
+0EE0 B710BC           (      FLOODIT.ASM):00152                 STA NEXTFIB     
+0EE3 3502             (      FLOODIT.ASM):00153                 PULS A
+0EE5 39               (      FLOODIT.ASM):00154                 RTS
+                      (      FLOODIT.ASM):00155                 
+                      (      FLOODIT.ASM):00156         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00157         ;DRAW_LEGEND
+                      (      FLOODIT.ASM):00158         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0EE6                  (      FLOODIT.ASM):00159         DRAW_LEGEND:
+0EE6 8E10C7           (      FLOODIT.ASM):00160                 LDX #LEGEND
+0EE9 108E05E0         (      FLOODIT.ASM):00161                 LDY #LAST_LINE
+0EED BD10A4           (      FLOODIT.ASM):00162                 JSR STRCPY
+0EF0 39               (      FLOODIT.ASM):00163                 RTS
+                      (      FLOODIT.ASM):00164         
+                      (      FLOODIT.ASM):00165                 
                       (      FLOODIT.ASM):00166         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0EE6                  (      FLOODIT.ASM):00167         DRAW_LEGEND:
-0EE6 8E1083           (      FLOODIT.ASM):00168                 LDX #LEGEND
-0EE9 108E05E0         (      FLOODIT.ASM):00169                 LDY #LAST_LINE
-0EED BD1060           (      FLOODIT.ASM):00170                 JSR STRCPY
-0EF0 39               (      FLOODIT.ASM):00171                 RTS
-                      (      FLOODIT.ASM):00172         
-                      (      FLOODIT.ASM):00173                 
-                      (      FLOODIT.ASM):00174         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00175         ;DRAW_INSTRUCTIONS TO THE OFFSCREEN BUFFER
-                      (      FLOODIT.ASM):00176         ;THIS IS CALLED ON START TO DRAW THE OFFSCREEN 
-                      (      FLOODIT.ASM):00177         ;HELP PAGE
-                      (      FLOODIT.ASM):00178         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0EF1                  (      FLOODIT.ASM):00179         DRAW_INSTRUCTIONS:
-0EF1 8680             (      FLOODIT.ASM):00180                 LDA #BLACK
-0EF3 B7107C           (      FLOODIT.ASM):00181                 STA CLR_COLOR
-0EF6 8E1284           (      FLOODIT.ASM):00182                 LDX #SCREEN_BUFFER
-0EF9 BD0F39           (      FLOODIT.ASM):00183                 JSR  CLS
-0EFC 8E1684           (      FLOODIT.ASM):00184                 LDX #INSTRUCTIONS1
-0EFF 108E1284         (      FLOODIT.ASM):00185                 LDY #SCREEN_BUFFER
-0F03 BD1060           (      FLOODIT.ASM):00186                 JSR STRCPY
-0F06 8E16A2           (      FLOODIT.ASM):00187                 LDX #INSTRUCTIONS2
-0F09 108E12A4         (      FLOODIT.ASM):00188                 LDY #SCREEN_BUFFER+32
-0F0D BD1060           (      FLOODIT.ASM):00189                 JSR STRCPY
-0F10 8E16C1           (      FLOODIT.ASM):00190                 LDX #INSTRUCTIONS3
-0F13 108E12C4         (      FLOODIT.ASM):00191                 LDY #SCREEN_BUFFER+64
-0F17 BD1060           (      FLOODIT.ASM):00192                 JSR STRCPY
-0F1A 8E16DA           (      FLOODIT.ASM):00193                 LDX #INSTRUCTIONS4
-0F1D 108E12E4         (      FLOODIT.ASM):00194                 LDY #SCREEN_BUFFER+96
-0F21 BD1060           (      FLOODIT.ASM):00195                 JSR STRCPY
-0F24 8E16F6           (      FLOODIT.ASM):00196                 LDX #INSTRUCTIONS5
-0F27 108E1304         (      FLOODIT.ASM):00197                 LDY #SCREEN_BUFFER+128
-0F2B BD1060           (      FLOODIT.ASM):00198                 JSR STRCPY
-0F2E 8E1715           (      FLOODIT.ASM):00199                 LDX #INSTRUCTIONS6
-0F31 108E1324         (      FLOODIT.ASM):00200                 LDY #SCREEN_BUFFER+160
-0F35 BD1060           (      FLOODIT.ASM):00201                 JSR STRCPY
-0F38 39               (      FLOODIT.ASM):00202                 RTS
-                      (      FLOODIT.ASM):00203                 
-                      (      FLOODIT.ASM):00204         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00205         ;CLS
-                      (      FLOODIT.ASM):00206         ;CLEARS SCREEN WITH COLOR STORED IN CLR_COLOR
-                      (      FLOODIT.ASM):00207         ;X CONTANS ADDR TO CLEAR
-                      (      FLOODIT.ASM):00208         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0F39                  (      FLOODIT.ASM):00209         CLS:
-0F39 3436             (      FLOODIT.ASM):00210                 PSHS D,X,Y  ; SAVE REGISTERS
-0F3B 108E0000         (      FLOODIT.ASM):00211                 LDY #0
-0F3F B6107C           (      FLOODIT.ASM):00212         @a      LDA CLR_COLOR   
-0F42 A780             (      FLOODIT.ASM):00213                 STA ,X+
-0F44 A6A0             (      FLOODIT.ASM):00214                 LDA     ,Y+
-0F46 108C0200         (      FLOODIT.ASM):00215                 CMPY #512  ; bottom of screen mem
-0F4A 26F3             (      FLOODIT.ASM):00216                 BNE @a
-0F4C 3536             (      FLOODIT.ASM):00217                 PULS Y,X,D  ; RESTORE REGISTERS
-0F4E 39               (      FLOODIT.ASM):00218                 RTS
-                      (      FLOODIT.ASM):00219         
-                      (      FLOODIT.ASM):00220         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00221         ;START_FILL
-                      (      FLOODIT.ASM):00222         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0F4F                  (      FLOODIT.ASM):00223         START_FILL:
-0F4F 7C107D           (      FLOODIT.ASM):00224                 INC TURNS
-0F52 BD0FF3           (      FLOODIT.ASM):00225                 JSR CLEAR_FLAGS
-                      (      FLOODIT.ASM):00226                 ;SAVE THE ORIGNAL COLOR
-0F55 B60400           (      FLOODIT.ASM):00227                 LDA VRAM
-0F58 B7107A           (      FLOODIT.ASM):00228                 STA OLD_COLOR
-                      (      FLOODIT.ASM):00229                 ;MAKE 0,0 THE NEW COLOR
-0F5B 8600             (      FLOODIT.ASM):00230                 LDA #0
-0F5D 3602             (      FLOODIT.ASM):00231                 PSHU A
-0F5F 3602             (      FLOODIT.ASM):00232                 PSHU A
-0F61 BD0F71           (      FLOODIT.ASM):00233                 JSR BUCKET_FILL
-0F64 BD1007           (      FLOODIT.ASM):00234                 JSR CHECK_WIN
-0F67 3702             (      FLOODIT.ASM):00235                 PULU A  ; GET RETURN CODE
-0F69 8101             (      FLOODIT.ASM):00236                 CMPA #1
-0F6B 2603             (      FLOODIT.ASM):00237                 BNE @no
-0F6D BD104F           (      FLOODIT.ASM):00238                 JSR PLAY_WIN_SND        ;  PLAY VICTORY MUSIC
-0F70 39               (      FLOODIT.ASM):00239         @no     RTS
-                      (      FLOODIT.ASM):00240         
-                      (      FLOODIT.ASM):00241         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00242         ;BUCKET_FILL
-                      (      FLOODIT.ASM):00243         ;IF SQUARE IS INBOUNDS AND NOT MARKED AND
-                      (      FLOODIT.ASM):00244         ;COLOR OF SQUARE IS EQUAL TO OLD COLOR,
-                      (      FLOODIT.ASM):00245         ;MAKE IT THE NEW COLOR AND BUCKET FILL THE
-                      (      FLOODIT.ASM):00246         ;SUROUNDING SQUARES
-                      (      FLOODIT.ASM):00247         ;THE X,Y COORD OF THE SQUARE TO FILL IS 
-                      (      FLOODIT.ASM):00248         ;PASSED ON THE USER STACK
-                      (      FLOODIT.ASM):00249         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0F71                  (      FLOODIT.ASM):00250         BUCKET_FILL:
-                      (      FLOODIT.ASM):00251                 ;GET THE SQUARE TO CLEAR
-0F71 3702             (      FLOODIT.ASM):00252                 PULU A 
-0F73 B71082           (      FLOODIT.ASM):00253                 STA Y_COORD
-0F76 3702             (      FLOODIT.ASM):00254                 PULU A
-0F78 B71081           (      FLOODIT.ASM):00255                 STA X_COORD
-                      (      FLOODIT.ASM):00256                 ;SEE IF X,Y ARE ON THE BOARD    
-0F7B 81FF             (      FLOODIT.ASM):00257                 CMPA #0xFF      ; -1
-0F7D 2773             (      FLOODIT.ASM):00258                 BEQ @x
-0F7F 8120             (      FLOODIT.ASM):00259                 CMPA #32        ; OFF RIGHT EDGE        
-0F81 276F             (      FLOODIT.ASM):00260                 BEQ @x
-0F83 B61082           (      FLOODIT.ASM):00261                 LDA Y_COORD
-0F86 81FF             (      FLOODIT.ASM):00262                 CMPA #0xFF      ; -1
-0F88 2768             (      FLOODIT.ASM):00263                 BEQ @x          ;OFF TOP
-0F8A 810F             (      FLOODIT.ASM):00264                 CMPA #15        ; BOTTOM ROW
-0F8C 2764             (      FLOODIT.ASM):00265                 BEQ @x          ;OFF BOTTOM
-                      (      FLOODIT.ASM):00266                 ;SEE IF IT'S BEEN MARKED ALREADY
-0F8E 8620             (      FLOODIT.ASM):00267                 LDA #32
-0F90 F61082           (      FLOODIT.ASM):00268                 LDB Y_COORD
-0F93 3D               (      FLOODIT.ASM):00269                 MUL
-0F94 FB1081           (      FLOODIT.ASM):00270                 ADDB X_COORD
-0F97 2401             (      FLOODIT.ASM):00271                 BCC @nc ; NO CARRY
-0F99 4C               (      FLOODIT.ASM):00272                 INCA    ; ADD CARRY TO A
-                      (      FLOODIT.ASM):00273                 ;D NOW CONTAINS THE OFFSET OF THE FLAG
-0F9A 1F01             (      FLOODIT.ASM):00274         @nc     TFR D,X
-0F9C A68910A4         (      FLOODIT.ASM):00275                 LDA FLAGS,X
-0FA0 8101             (      FLOODIT.ASM):00276                 CMPA #1 ; ALREADY MARKED?
-0FA2 274E             (      FLOODIT.ASM):00277                 BEQ @x  ; BAIL IF ALREADY MARKED
-                      (      FLOODIT.ASM):00278                 ;IS THE COLOR OF THIS SQUARE EQUAL TO THE OLD_COLOR?
-0FA4 A6890400         (      FLOODIT.ASM):00279                 LDA VRAM,X
-0FA8 B1107A           (      FLOODIT.ASM):00280                 CMPA OLD_COLOR
-0FAB 2645             (      FLOODIT.ASM):00281                 BNE @x
-                      (      FLOODIT.ASM):00282                 ;MAKE IT THE NEW COLOR
-0FAD B6107B           (      FLOODIT.ASM):00283                 LDA NEW_COLOR
-0FB0 A7890400         (      FLOODIT.ASM):00284                 STA VRAM,X
-                      (      FLOODIT.ASM):00285                 ;MARK THE SQUARE
-0FB4 8601             (      FLOODIT.ASM):00286                 LDA #1
-0FB6 A78910A4         (      FLOODIT.ASM):00287                 STA FLAGS,X
-                      (      FLOODIT.ASM):00288                 ;BUCKET FILL THE FOUR SURROUNDING SQUARES
-                      (      FLOODIT.ASM):00289                 ; FILL RIGHT (X+1,Y)
-0FBA B61081           (      FLOODIT.ASM):00290                 LDA X_COORD
-0FBD 4C               (      FLOODIT.ASM):00291                 INCA
-0FBE 3602             (      FLOODIT.ASM):00292                 PSHU A
-0FC0 B61082           (      FLOODIT.ASM):00293                 LDA     Y_COORD
-0FC3 3602             (      FLOODIT.ASM):00294                 PSHU A
-0FC5 BD0F71           (      FLOODIT.ASM):00295                 JSR BUCKET_FILL 
-                      (      FLOODIT.ASM):00296                 ; FILL LEFT (X-1,Y)
-0FC8 B61081           (      FLOODIT.ASM):00297                 LDA X_COORD
-0FCB 4A               (      FLOODIT.ASM):00298                 DECA
-0FCC 3602             (      FLOODIT.ASM):00299                 PSHU A
-0FCE B61082           (      FLOODIT.ASM):00300                 LDA     Y_COORD
-0FD1 3602             (      FLOODIT.ASM):00301                 PSHU A
-0FD3 BD0F71           (      FLOODIT.ASM):00302                 JSR BUCKET_FILL 
-                      (      FLOODIT.ASM):00303                 ; FILL UP  (X,Y-1)
-0FD6 B61081           (      FLOODIT.ASM):00304                 LDA X_COORD
-0FD9 3602             (      FLOODIT.ASM):00305                 PSHU A
-0FDB B61082           (      FLOODIT.ASM):00306                 LDA Y_COORD     
-0FDE 4C               (      FLOODIT.ASM):00307                 INCA 
-0FDF 3602             (      FLOODIT.ASM):00308                 PSHU A
-0FE1 BD0F71           (      FLOODIT.ASM):00309                 JSR BUCKET_FILL
-                      (      FLOODIT.ASM):00310                 ; FILL DOWN
-0FE4 B61081           (      FLOODIT.ASM):00311                 LDA X_COORD
-0FE7 3602             (      FLOODIT.ASM):00312                 PSHU A
-0FE9 B61082           (      FLOODIT.ASM):00313                 LDA Y_COORD     
-0FEC 4A               (      FLOODIT.ASM):00314                 DECA 
-0FED 3602             (      FLOODIT.ASM):00315                 PSHU A
-0FEF BD0F71           (      FLOODIT.ASM):00316                 JSR BUCKET_FILL
-0FF2 39               (      FLOODIT.ASM):00317         @x      RTS
-                      (      FLOODIT.ASM):00318                 
-                      (      FLOODIT.ASM):00319         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00320         ; CLEAR_FLAGS
-                      (      FLOODIT.ASM):00321         ; SETS EACH OF THE 60 FLAG BYTES TO 0
-                      (      FLOODIT.ASM):00322         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0FF3                  (      FLOODIT.ASM):00323         CLEAR_FLAGS:
-0FF3 108E0000         (      FLOODIT.ASM):00324                 LDY #0          ;loop counter
-0FF7 8E10A4           (      FLOODIT.ASM):00325                 LDX #FLAGS      ;start addr
-0FFA 9600             (      FLOODIT.ASM):00326         @a      LDA 0
-0FFC A780             (      FLOODIT.ASM):00327                 STA ,X+         ;clear the byte
-0FFE A6A0             (      FLOODIT.ASM):00328                 LDA ,Y+         ;inc loop counter (clobbers a)
-1000 108C01E0         (      FLOODIT.ASM):00329                 CMPY #480
-1004 26F4             (      FLOODIT.ASM):00330                 BNE @a
-1006 39               (      FLOODIT.ASM):00331                 RTS
-                      (      FLOODIT.ASM):00332         
-                      (      FLOODIT.ASM):00333         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00334         ;CHECK WIN
-                      (      FLOODIT.ASM):00335         ;SCAN THE SCREEN MEMORY LOOKING FOR A CHAR THAT
-                      (      FLOODIT.ASM):00336         ;DOESN'T MATCH THE FIRST.  THE RESULT (0 or 1)
-                      (      FLOODIT.ASM):00337         ;IS RETURNED ON THE USER STACK.
-                      (      FLOODIT.ASM):00338         ;REGISTERS ARE NOT AFFECTED
-                      (      FLOODIT.ASM):00339         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-1007                  (      FLOODIT.ASM):00340         CHECK_WIN:
-1007 3436             (      FLOODIT.ASM):00341                 PSHS D,X,Y
-1009 108E0000         (      FLOODIT.ASM):00342                 LDY #0          ; LOOP COUNTER
-100D 8E0401           (      FLOODIT.ASM):00343                 LDX #VRAM+1     ;       ADDRESS OF VIDEO RAM
-1010 B60400           (      FLOODIT.ASM):00344                 LDA VRAM        ;       LOAD 1ST CHAR OF VRAM
-1013 B7107E           (      FLOODIT.ASM):00345                 STA TEMP        ;       SAVE 1ST CHAR IN TEMP   
-1016 A680             (      FLOODIT.ASM):00346         @lp     LDA ,X+         ;       GET CHAR FROM SCREEN_MEM
-1018 B1107E           (      FLOODIT.ASM):00347                 CMPA TEMP       ;       DOES IT MATCH THE 1ST CHAR
-101B 260C             (      FLOODIT.ASM):00348                 BNE @no         ;       FOUND A CHAR THAT DIDN'T MATCH THE FIRST
-101D A6A0             (      FLOODIT.ASM):00349                 LDA ,Y+         ;       INC LP COUNTER
-101F 108C01DF         (      FLOODIT.ASM):00350                 CMPY #479       ;       HIT END?
-1023 26F1             (      FLOODIT.ASM):00351                 BNE @lp         ;       LOOP
-1025 8601             (      FLOODIT.ASM):00352                 LDA #1          ;       IF GOT HERE, LOOP DONE, ALL CHARS ON SCRN ARE THE SAME          
-1027 2002             (      FLOODIT.ASM):00353                 BRA @r  ;       DONE
-1029 8600             (      FLOODIT.ASM):00354         @no     LDA #0  ; 0 = NOT FOUND
-102B 3602             (      FLOODIT.ASM):00355         @r      PSHU A
-102D 3536             (      FLOODIT.ASM):00356                 PULS Y,X,D
-102F 39               (      FLOODIT.ASM):00357                 RTS
-                      (      FLOODIT.ASM):00358         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00359         ; SWITCH_BUFFERS
-                      (      FLOODIT.ASM):00360         ; THIS ROUTINE COPIES THE SCREEN MEMORY INTO
-                      (      FLOODIT.ASM):00361         ; GRAPHICS BUFFER 1. THIS IS REQUIRED PRIOR
-                      (      FLOODIT.ASM):00362         ; TO DISPLAYING THE HELP SCREEN SO THE BOARD
-                      (      FLOODIT.ASM):00363         ; STATE DOESN'T GET CLOBBERED.
-                      (      FLOODIT.ASM):00364         ;
-                      (      FLOODIT.ASM):00365         ; Y CONTAINS ADDRESS OF OFFSCREEN BUFFER
-                      (      FLOODIT.ASM):00366         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-1030                  (      FLOODIT.ASM):00367         SWITCH_BUFFERS:
-1030 3412             (      FLOODIT.ASM):00368                 PSHS A,X
-1032 8E0400           (      FLOODIT.ASM):00369                 LDX #VRAM
-1035 A684             (      FLOODIT.ASM):00370         @a      LDA ,X          ;SAVE SCREEN BYTE
-1037 B7107E           (      FLOODIT.ASM):00371                 STA TEMP
-103A A6A4             (      FLOODIT.ASM):00372                 LDA ,Y          ;LOAD BUFFER BYTE
-103C A784             (      FLOODIT.ASM):00373                 STA ,X          ;COPY BUFFER BYTE TO SCREEN
-103E B6107E           (      FLOODIT.ASM):00374                 LDA TEMP        ;GET SCREEN BYTE BACK
-1041 A7A4             (      FLOODIT.ASM):00375                 STA ,Y          ;COPY SCREEN TO BUF
-1043 A680             (      FLOODIT.ASM):00376                 LDA ,X+ ; INC X
-1045 A6A0             (      FLOODIT.ASM):00377                 LDA ,Y+ ; INC Y
-1047 8C0600           (      FLOODIT.ASM):00378                 CMPX #VRAM_END ; DONE?
-104A 26E9             (      FLOODIT.ASM):00379                 BNE @a
-104C 3512             (      FLOODIT.ASM):00380                 PULS X,A
-104E 39               (      FLOODIT.ASM):00381                 RTS
-                      (      FLOODIT.ASM):00382                 
-                      (      FLOODIT.ASM):00383         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00384         ;PLAY_WIN_SND   
-                      (      FLOODIT.ASM):00385         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-104F                  (      FLOODIT.ASM):00386         PLAY_WIN_SND:
-104F 8600             (      FLOODIT.ASM):00387                 LDA #0
-1051 B7107D           (      FLOODIT.ASM):00388                 STA TURNS
-1054 BD0E9B           (      FLOODIT.ASM):00389                 JSR CREATE_BOARD        
-1057 39               (      FLOODIT.ASM):00390                 RTS
-                      (      FLOODIT.ASM):00391                 
-                      (      FLOODIT.ASM):00392         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00393         ;       WASTE TIME
-                      (      FLOODIT.ASM):00394         ;       AN EMPTY LOOP TO WASTE TIME.  USED FOR
-                      (      FLOODIT.ASM):00395         ;       THE BLINKING WHEN THE PLAYER WINS
-                      (      FLOODIT.ASM):00396         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-1058                  (      FLOODIT.ASM):00397         WASTE_TIME:
-1058 86FF             (      FLOODIT.ASM):00398                 LDA #0xFF
-105A 4A               (      FLOODIT.ASM):00399         @lp     DECA    
-105B 8100             (      FLOODIT.ASM):00400                 CMPA #0
-105D 26FB             (      FLOODIT.ASM):00401                 BNE @lp
-105F 39               (      FLOODIT.ASM):00402                 RTS
-                      (      FLOODIT.ASM):00403         
-                      (      FLOODIT.ASM):00404         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00405         ; STRCPY:
-                      (      FLOODIT.ASM):00406         ; SRC AND DEST NEED TO BE STORED IN X,Y
-                      (      FLOODIT.ASM):00407         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
-1060                  (      FLOODIT.ASM):00408         STRCPY:
-1060 3402             (      FLOODIT.ASM):00409                 PSHS A
-1062 A680             (      FLOODIT.ASM):00410         @a      LDA ,X+
-1064 9100             (      FLOODIT.ASM):00411                 CMPA 0
-1066 2704             (      FLOODIT.ASM):00412                 BEQ STRCPY_DONE
-1068 A7A0             (      FLOODIT.ASM):00413                 STA ,Y+
-106A 20F6             (      FLOODIT.ASM):00414                 BRA @a
-106C                  (      FLOODIT.ASM):00415         STRCPY_DONE:
-106C 3502             (      FLOODIT.ASM):00416                 PULS A
-106E 39               (      FLOODIT.ASM):00417                 RTS
-                      (      FLOODIT.ASM):00418         
-                      (      FLOODIT.ASM):00419         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
-                      (      FLOODIT.ASM):00420         ; program data
+                      (      FLOODIT.ASM):00167         ;DRAW_INSTRUCTIONS TEXT TO THE OFFSCREEN BUFFER
+                      (      FLOODIT.ASM):00168         ;THIS IS CALLED ON START TO DRAW THE OFFSCREEN 
+                      (      FLOODIT.ASM):00169         ;HELP PAGE
+                      (      FLOODIT.ASM):00170         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0EF1                  (      FLOODIT.ASM):00171         DRAW_INSTRUCTIONS:
+0EF1 CC17C3           (      FLOODIT.ASM):00172                 LDD #INSTRUCTIONS10
+0EF4 3606             (      FLOODIT.ASM):00173                 PSHU D
+0EF6 CC17AD           (      FLOODIT.ASM):00174                 LDD #INSTRUCTIONS9
+0EF9 3606             (      FLOODIT.ASM):00175                 PSHU D
+0EFB CC1797           (      FLOODIT.ASM):00176                 LDD #INSTRUCTIONS8
+0EFE 3606             (      FLOODIT.ASM):00177                 PSHU D
+0F00 CC1778           (      FLOODIT.ASM):00178                 LDD #INSTRUCTIONS7
+0F03 3606             (      FLOODIT.ASM):00179                 PSHU D
+0F05 CC1759           (      FLOODIT.ASM):00180                 LDD #INSTRUCTIONS6
+0F08 3606             (      FLOODIT.ASM):00181                 PSHU D
+0F0A CC173A           (      FLOODIT.ASM):00182                 LDD #INSTRUCTIONS5      
+0F0D 3606             (      FLOODIT.ASM):00183                 PSHU D
+0F0F CC171E           (      FLOODIT.ASM):00184                 LDD #INSTRUCTIONS4
+0F12 3606             (      FLOODIT.ASM):00185                 PSHU D
+0F14 CC1705           (      FLOODIT.ASM):00186                 LDD #INSTRUCTIONS3
+0F17 3606             (      FLOODIT.ASM):00187                 PSHU D
+0F19 CC16E6           (      FLOODIT.ASM):00188                 LDD #INSTRUCTIONS2
+0F1C 3606             (      FLOODIT.ASM):00189                 PSHU D
+0F1E CC16C8           (      FLOODIT.ASM):00190                 LDD #INSTRUCTIONS1
+0F21 3606             (      FLOODIT.ASM):00191                 PSHU D
+0F23 108E12E8         (      FLOODIT.ASM):00192                 LDY #(SCREEN_BUFFER+32)
+0F27 8600             (      FLOODIT.ASM):00193                 LDA #0  ;       LOOP COUNTER
+0F29                  (      FLOODIT.ASM):00194         @lp     
+0F29 3710             (      FLOODIT.ASM):00195                 PULU X          ; POP A STRING
+0F2B 3636             (      FLOODIT.ASM):00196                 PSHU D,X,Y
+0F2D BD10A4           (      FLOODIT.ASM):00197                 JSR STRCPY      ; WRITE IT
+0F30 3736             (      FLOODIT.ASM):00198                 PULU Y,X,D
+0F32 3606             (      FLOODIT.ASM):00199                 PSHU D          
+0F34 1F20             (      FLOODIT.ASM):00200                 TFR Y,D         ; ADD 32 (ONE LINE) TO Y
+0F36 C30020           (      FLOODIT.ASM):00201                 ADDD #32
+0F39 1F02             (      FLOODIT.ASM):00202                 TFR D,Y                 
+0F3B 3706             (      FLOODIT.ASM):00203                 PULU D
+0F3D 4C               (      FLOODIT.ASM):00204                 INCA
+0F3E 810A             (      FLOODIT.ASM):00205                 CMPA #10        ; DONE?
+0F40 26E7             (      FLOODIT.ASM):00206                 BNE @lp
+0F42 39               (      FLOODIT.ASM):00207                 RTS
+                      (      FLOODIT.ASM):00208                 
+                      (      FLOODIT.ASM):00209         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00210         ;CLS
+                      (      FLOODIT.ASM):00211         ;CLEARS SCREEN WITH COLOR STORED IN CLR_COLOR
+                      (      FLOODIT.ASM):00212         ;X CONTANS ADDR TO CLEAR
+                      (      FLOODIT.ASM):00213         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0F43                  (      FLOODIT.ASM):00214         CLS:
+0F43 3436             (      FLOODIT.ASM):00215                 PSHS D,X,Y  ; SAVE REGISTERS
+0F45 108E0000         (      FLOODIT.ASM):00216                 LDY #0
+0F49 B610C0           (      FLOODIT.ASM):00217         @a      LDA CLR_COLOR   
+0F4C A780             (      FLOODIT.ASM):00218                 STA ,X+
+0F4E A6A0             (      FLOODIT.ASM):00219                 LDA     ,Y+
+0F50 108C0200         (      FLOODIT.ASM):00220                 CMPY #512  ; bottom of screen mem
+0F54 26F3             (      FLOODIT.ASM):00221                 BNE @a
+0F56 3536             (      FLOODIT.ASM):00222                 PULS Y,X,D  ; RESTORE REGISTERS
+0F58 39               (      FLOODIT.ASM):00223                 RTS
+                      (      FLOODIT.ASM):00224         
+                      (      FLOODIT.ASM):00225         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00226         ;START_FILL
+                      (      FLOODIT.ASM):00227         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0F59                  (      FLOODIT.ASM):00228         START_FILL:
+0F59 7C10C1           (      FLOODIT.ASM):00229                 INC TURNS
+0F5C BD0FFD           (      FLOODIT.ASM):00230                 JSR CLEAR_FLAGS
+                      (      FLOODIT.ASM):00231                 ;SAVE THE ORIGNAL COLOR
+0F5F B60400           (      FLOODIT.ASM):00232                 LDA VRAM
+0F62 B710BE           (      FLOODIT.ASM):00233                 STA OLD_COLOR
+                      (      FLOODIT.ASM):00234                 ;MAKE 0,0 THE NEW COLOR
+0F65 8600             (      FLOODIT.ASM):00235                 LDA #0
+0F67 3602             (      FLOODIT.ASM):00236                 PSHU A
+0F69 3602             (      FLOODIT.ASM):00237                 PSHU A
+0F6B BD0F7B           (      FLOODIT.ASM):00238                 JSR BUCKET_FILL
+0F6E BD1011           (      FLOODIT.ASM):00239                 JSR CHECK_WIN
+0F71 3702             (      FLOODIT.ASM):00240                 PULU A  ; GET RETURN CODE
+0F73 8101             (      FLOODIT.ASM):00241                 CMPA #1
+0F75 2603             (      FLOODIT.ASM):00242                 BNE @no
+0F77 BD1093           (      FLOODIT.ASM):00243                 JSR PLAY_WIN_SND        ;  PLAY VICTORY MUSIC
+0F7A 39               (      FLOODIT.ASM):00244         @no     RTS
+                      (      FLOODIT.ASM):00245         
+                      (      FLOODIT.ASM):00246         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00247         ;BUCKET_FILL
+                      (      FLOODIT.ASM):00248         ;IF SQUARE IS INBOUNDS AND NOT MARKED AND
+                      (      FLOODIT.ASM):00249         ;COLOR OF SQUARE IS EQUAL TO OLD COLOR,
+                      (      FLOODIT.ASM):00250         ;MAKE IT THE NEW COLOR AND BUCKET FILL THE
+                      (      FLOODIT.ASM):00251         ;SUROUNDING SQUARES
+                      (      FLOODIT.ASM):00252         ;THE X,Y COORD OF THE SQUARE TO FILL IS 
+                      (      FLOODIT.ASM):00253         ;PASSED ON THE USER STACK
+                      (      FLOODIT.ASM):00254         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0F7B                  (      FLOODIT.ASM):00255         BUCKET_FILL:
+                      (      FLOODIT.ASM):00256                 ;GET THE SQUARE TO CLEAR
+0F7B 3702             (      FLOODIT.ASM):00257                 PULU A 
+0F7D B710C6           (      FLOODIT.ASM):00258                 STA Y_COORD
+0F80 3702             (      FLOODIT.ASM):00259                 PULU A
+0F82 B710C5           (      FLOODIT.ASM):00260                 STA X_COORD
+                      (      FLOODIT.ASM):00261                 ;SEE IF X,Y ARE ON THE BOARD    
+0F85 81FF             (      FLOODIT.ASM):00262                 CMPA #0xFF      ; -1
+0F87 2773             (      FLOODIT.ASM):00263                 BEQ @x
+0F89 8120             (      FLOODIT.ASM):00264                 CMPA #32        ; OFF RIGHT EDGE        
+0F8B 276F             (      FLOODIT.ASM):00265                 BEQ @x
+0F8D B610C6           (      FLOODIT.ASM):00266                 LDA Y_COORD
+0F90 81FF             (      FLOODIT.ASM):00267                 CMPA #0xFF      ; -1
+0F92 2768             (      FLOODIT.ASM):00268                 BEQ @x          ;OFF TOP
+0F94 810F             (      FLOODIT.ASM):00269                 CMPA #15        ; BOTTOM ROW
+0F96 2764             (      FLOODIT.ASM):00270                 BEQ @x          ;OFF BOTTOM
+                      (      FLOODIT.ASM):00271                 ;SEE IF IT'S BEEN MARKED ALREADY
+0F98 8620             (      FLOODIT.ASM):00272                 LDA #32
+0F9A F610C6           (      FLOODIT.ASM):00273                 LDB Y_COORD
+0F9D 3D               (      FLOODIT.ASM):00274                 MUL
+0F9E FB10C5           (      FLOODIT.ASM):00275                 ADDB X_COORD
+0FA1 2401             (      FLOODIT.ASM):00276                 BCC @nc ; NO CARRY
+0FA3 4C               (      FLOODIT.ASM):00277                 INCA    ; ADD CARRY TO A
+                      (      FLOODIT.ASM):00278                 ;D NOW CONTAINS THE OFFSET OF THE FLAG
+0FA4 1F01             (      FLOODIT.ASM):00279         @nc     TFR D,X
+0FA6 A68910E8         (      FLOODIT.ASM):00280                 LDA FLAGS,X
+0FAA 8101             (      FLOODIT.ASM):00281                 CMPA #1 ; ALREADY MARKED?
+0FAC 274E             (      FLOODIT.ASM):00282                 BEQ @x  ; BAIL IF ALREADY MARKED
+                      (      FLOODIT.ASM):00283                 ;IS THE COLOR OF THIS SQUARE EQUAL TO THE OLD_COLOR?
+0FAE A6890400         (      FLOODIT.ASM):00284                 LDA VRAM,X
+0FB2 B110BE           (      FLOODIT.ASM):00285                 CMPA OLD_COLOR
+0FB5 2645             (      FLOODIT.ASM):00286                 BNE @x
+                      (      FLOODIT.ASM):00287                 ;MAKE IT THE NEW COLOR
+0FB7 B610BF           (      FLOODIT.ASM):00288                 LDA NEW_COLOR
+0FBA A7890400         (      FLOODIT.ASM):00289                 STA VRAM,X
+                      (      FLOODIT.ASM):00290                 ;MARK THE SQUARE
+0FBE 8601             (      FLOODIT.ASM):00291                 LDA #1
+0FC0 A78910E8         (      FLOODIT.ASM):00292                 STA FLAGS,X
+                      (      FLOODIT.ASM):00293                 ;BUCKET FILL THE FOUR SURROUNDING SQUARES
+                      (      FLOODIT.ASM):00294                 ; FILL RIGHT (X+1,Y)
+0FC4 B610C5           (      FLOODIT.ASM):00295                 LDA X_COORD
+0FC7 4C               (      FLOODIT.ASM):00296                 INCA
+0FC8 3602             (      FLOODIT.ASM):00297                 PSHU A
+0FCA B610C6           (      FLOODIT.ASM):00298                 LDA     Y_COORD
+0FCD 3602             (      FLOODIT.ASM):00299                 PSHU A
+0FCF BD0F7B           (      FLOODIT.ASM):00300                 JSR BUCKET_FILL 
+                      (      FLOODIT.ASM):00301                 ; FILL LEFT (X-1,Y)
+0FD2 B610C5           (      FLOODIT.ASM):00302                 LDA X_COORD
+0FD5 4A               (      FLOODIT.ASM):00303                 DECA
+0FD6 3602             (      FLOODIT.ASM):00304                 PSHU A
+0FD8 B610C6           (      FLOODIT.ASM):00305                 LDA     Y_COORD
+0FDB 3602             (      FLOODIT.ASM):00306                 PSHU A
+0FDD BD0F7B           (      FLOODIT.ASM):00307                 JSR BUCKET_FILL 
+                      (      FLOODIT.ASM):00308                 ; FILL UP  (X,Y-1)
+0FE0 B610C5           (      FLOODIT.ASM):00309                 LDA X_COORD
+0FE3 3602             (      FLOODIT.ASM):00310                 PSHU A
+0FE5 B610C6           (      FLOODIT.ASM):00311                 LDA Y_COORD     
+0FE8 4C               (      FLOODIT.ASM):00312                 INCA 
+0FE9 3602             (      FLOODIT.ASM):00313                 PSHU A
+0FEB BD0F7B           (      FLOODIT.ASM):00314                 JSR BUCKET_FILL
+                      (      FLOODIT.ASM):00315                 ; FILL DOWN
+0FEE B610C5           (      FLOODIT.ASM):00316                 LDA X_COORD
+0FF1 3602             (      FLOODIT.ASM):00317                 PSHU A
+0FF3 B610C6           (      FLOODIT.ASM):00318                 LDA Y_COORD     
+0FF6 4A               (      FLOODIT.ASM):00319                 DECA 
+0FF7 3602             (      FLOODIT.ASM):00320                 PSHU A
+0FF9 BD0F7B           (      FLOODIT.ASM):00321                 JSR BUCKET_FILL
+0FFC 39               (      FLOODIT.ASM):00322         @x      RTS
+                      (      FLOODIT.ASM):00323                 
+                      (      FLOODIT.ASM):00324         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00325         ; CLEAR_FLAGS
+                      (      FLOODIT.ASM):00326         ; SETS EACH OF THE 60 FLAG BYTES TO 0
+                      (      FLOODIT.ASM):00327         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0FFD                  (      FLOODIT.ASM):00328         CLEAR_FLAGS:
+0FFD 108E0000         (      FLOODIT.ASM):00329                 LDY #0          ;loop counter
+1001 8E10E8           (      FLOODIT.ASM):00330                 LDX #FLAGS      ;start addr
+1004 9600             (      FLOODIT.ASM):00331         @a      LDA 0
+1006 A780             (      FLOODIT.ASM):00332                 STA ,X+         ;clear the byte
+1008 A6A0             (      FLOODIT.ASM):00333                 LDA ,Y+         ;inc loop counter (clobbers a)
+100A 108C01E0         (      FLOODIT.ASM):00334                 CMPY #480
+100E 26F4             (      FLOODIT.ASM):00335                 BNE @a
+1010 39               (      FLOODIT.ASM):00336                 RTS
+                      (      FLOODIT.ASM):00337         
+                      (      FLOODIT.ASM):00338         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00339         ;CHECK WIN
+                      (      FLOODIT.ASM):00340         ;SCAN THE SCREEN MEMORY LOOKING FOR A CHAR THAT
+                      (      FLOODIT.ASM):00341         ;DOESN'T MATCH THE FIRST.  THE RESULT (0 or 1)
+                      (      FLOODIT.ASM):00342         ;IS RETURNED ON THE USER STACK.
+                      (      FLOODIT.ASM):00343         ;REGISTERS ARE NOT AFFECTED
+                      (      FLOODIT.ASM):00344         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+1011                  (      FLOODIT.ASM):00345         CHECK_WIN:
+1011 3436             (      FLOODIT.ASM):00346                 PSHS D,X,Y
+1013 108E0000         (      FLOODIT.ASM):00347                 LDY #0          ; LOOP COUNTER
+1017 8E0401           (      FLOODIT.ASM):00348                 LDX #VRAM+1     ;       ADDRESS OF VIDEO RAM
+101A B60400           (      FLOODIT.ASM):00349                 LDA VRAM        ;       LOAD 1ST CHAR OF VRAM
+101D B710C2           (      FLOODIT.ASM):00350                 STA TEMP        ;       SAVE 1ST CHAR IN TEMP   
+1020 A680             (      FLOODIT.ASM):00351         @lp     LDA ,X+         ;       GET CHAR FROM SCREEN_MEM
+1022 B110C2           (      FLOODIT.ASM):00352                 CMPA TEMP       ;       DOES IT MATCH THE 1ST CHAR
+1025 260C             (      FLOODIT.ASM):00353                 BNE @no         ;       FOUND A CHAR THAT DIDN'T MATCH THE FIRST
+1027 A6A0             (      FLOODIT.ASM):00354                 LDA ,Y+         ;       INC LP COUNTER
+1029 108C01DF         (      FLOODIT.ASM):00355                 CMPY #479       ;       HIT END?
+102D 26F1             (      FLOODIT.ASM):00356                 BNE @lp         ;       LOOP
+102F 8601             (      FLOODIT.ASM):00357                 LDA #1          ;       IF GOT HERE, LOOP DONE, ALL CHARS ON SCRN ARE THE SAME          
+1031 2002             (      FLOODIT.ASM):00358                 BRA @r  ;       DONE
+1033 8600             (      FLOODIT.ASM):00359         @no     LDA #0  ; 0 = NOT FOUND
+1035 3602             (      FLOODIT.ASM):00360         @r      PSHU A
+1037 3536             (      FLOODIT.ASM):00361                 PULS Y,X,D
+1039 39               (      FLOODIT.ASM):00362                 RTS
+                      (      FLOODIT.ASM):00363         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00364         ; SWITCH_BUFFERS
+                      (      FLOODIT.ASM):00365         ; THIS ROUTINE COPIES THE SCREEN MEMORY INTO
+                      (      FLOODIT.ASM):00366         ; GRAPHICS BUFFER 1. THIS IS REQUIRED PRIOR
+                      (      FLOODIT.ASM):00367         ; TO DISPLAYING THE HELP SCREEN SO THE BOARD
+                      (      FLOODIT.ASM):00368         ; STATE DOESN'T GET CLOBBERED.
+                      (      FLOODIT.ASM):00369         ;
+                      (      FLOODIT.ASM):00370         ; Y CONTAINS ADDRESS OF OFFSCREEN BUFFER
+                      (      FLOODIT.ASM):00371         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+103A                  (      FLOODIT.ASM):00372         SWITCH_BUFFERS:
+103A 3412             (      FLOODIT.ASM):00373                 PSHS A,X
+103C 8E0400           (      FLOODIT.ASM):00374                 LDX #VRAM
+103F A684             (      FLOODIT.ASM):00375         @a      LDA ,X          ;SAVE SCREEN BYTE
+1041 B710C2           (      FLOODIT.ASM):00376                 STA TEMP
+1044 A6A4             (      FLOODIT.ASM):00377                 LDA ,Y          ;LOAD BUFFER BYTE
+1046 A784             (      FLOODIT.ASM):00378                 STA ,X          ;COPY BUFFER BYTE TO SCREEN
+1048 B610C2           (      FLOODIT.ASM):00379                 LDA TEMP        ;GET SCREEN BYTE BACK
+104B A7A4             (      FLOODIT.ASM):00380                 STA ,Y          ;COPY SCREEN TO BUF
+104D A680             (      FLOODIT.ASM):00381                 LDA ,X+ ; INC X
+104F A6A0             (      FLOODIT.ASM):00382                 LDA ,Y+ ; INC Y
+1051 8C0600           (      FLOODIT.ASM):00383                 CMPX #VRAM_END ; DONE?
+1054 26E9             (      FLOODIT.ASM):00384                 BNE @a
+1056 3512             (      FLOODIT.ASM):00385                 PULS X,A
+1058 39               (      FLOODIT.ASM):00386                 RTS
+                      (      FLOODIT.ASM):00387         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00388         ;       DRAWS THE BORDER AROUND THE SCREEN
+                      (      FLOODIT.ASM):00389         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+1059                  (      FLOODIT.ASM):00390         DRAW_INTRO:
+1059 8680             (      FLOODIT.ASM):00391                 LDA #BLACK                              ; CLEAR SCREEN
+105B B710C0           (      FLOODIT.ASM):00392                 STA CLR_COLOR
+105E 8E12C8           (      FLOODIT.ASM):00393                 LDX #SCREEN_BUFFER
+1061 BD0F43           (      FLOODIT.ASM):00394                 JSR CLS
+                      (      FLOODIT.ASM):00395                 ;DRAW LINE ACROSS TOP AND BOTTOM
+1064 8E12C8           (      FLOODIT.ASM):00396                 LDX #(SCREEN_BUFFER)
+1067 108E14A8         (      FLOODIT.ASM):00397                 LDY #(SCREEN_BUFFER+480)
+106B CC0000           (      FLOODIT.ASM):00398                 LDD #0          ; INDEX OF COLOR
+106E                  (      FLOODIT.ASM):00399         @l1     
+106E 4C               (      FLOODIT.ASM):00400                 INCA            
+106F 8105             (      FLOODIT.ASM):00401                 CMPA #5
+1071 2602             (      FLOODIT.ASM):00402                 BNE @n
+1073 8600             (      FLOODIT.ASM):00403                 LDA #0          ; START OVER AT 5
+1075 3620             (      FLOODIT.ASM):00404         @n      PSHU Y
+1077 108E0000         (      FLOODIT.ASM):00405                 LDY #0x00
+107B 1F89             (      FLOODIT.ASM):00406                 TFR A,B         ; INDEX NEEDS TO BE IN LO BYTE (B)
+107D 8600             (      FLOODIT.ASM):00407                 LDA #0          ; ZERO OUT HI BYTE
+107F 1F02             (      FLOODIT.ASM):00408                 TFR D,Y
+1081 A6A910B3         (      FLOODIT.ASM):00409                 LDA COLORS,Y ; LOOK UP COLOR CODE
+1085 A780             (      FLOODIT.ASM):00410                 STA ,X+
+1087 3720             (      FLOODIT.ASM):00411                 PULU Y
+1089 A7A0             (      FLOODIT.ASM):00412                 STA ,Y+
+108B 1F98             (      FLOODIT.ASM):00413                 TFR B,A         ; PUT COLOR BACK IN A
+108D 8C12E8           (      FLOODIT.ASM):00414                 CMPX #(SCREEN_BUFFER+32)        ; DONE? 
+1090 26DC             (      FLOODIT.ASM):00415                 BNE @l1
+                      (      FLOODIT.ASM):00416                 ;DRAW LINE DOWN RIGHT SIDE
+1092 39               (      FLOODIT.ASM):00417                 RTS
+                      (      FLOODIT.ASM):00418                         
+                      (      FLOODIT.ASM):00419         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00420         ;PLAY_WIN_SND   
                       (      FLOODIT.ASM):00421         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00422         ;       COLOR CODE ARRAY
-106F                  (      FLOODIT.ASM):00423         COLORS:
-106F 60               (      FLOODIT.ASM):00424                 .db GREEN       ; DARK GREEN
-1070 80               (      FLOODIT.ASM):00425                 .db BLACK
-1071 CF               (      FLOODIT.ASM):00426                 .db WHITE
-1072 AF               (      FLOODIT.ASM):00427                 .db BLUE 
-1073 9F               (      FLOODIT.ASM):00428                 .db YELLOW 
-1074 BF               (      FLOODIT.ASM):00429                 .db RED
-                      (      FLOODIT.ASM):00430         ;       RANDOM NUMBER STUFF
-1075                  (      FLOODIT.ASM):00431         FIB1:           
-1075 01               (      FLOODIT.ASM):00432                 .db 1 ; 55
-1076                  (      FLOODIT.ASM):00433         FIB2:
-1076 01               (      FLOODIT.ASM):00434                 .db 1 ; 89
-1077 00               (      FLOODIT.ASM):00435                 .db 0   ;padding so we can load nextfib into  X (which is 16 bits)
-1078                  (      FLOODIT.ASM):00436         NEXTFIB:        
-1078 01               (      FLOODIT.ASM):00437                 .db 1 
-1079 00               (      FLOODIT.ASM):00438                 .db 0   ;padding so we can load nextfib into  X (which is 16 bits)
-107A 00               (      FLOODIT.ASM):00439         OLD_COLOR .db 0 ;       ORIGINAL COLOR OF 0,0 BEFORE BUCKET FILL
-107B 00               (      FLOODIT.ASM):00440         NEW_COLOR .db 0 ;       COLOR TO BUCKET FILL WITH
-107C 20               (      FLOODIT.ASM):00441         CLR_COLOR .db 32        
-107D 00               (      FLOODIT.ASM):00442         TURNS .db 0     ;
-107E 00               (      FLOODIT.ASM):00443         TEMP    .db 0
-107F 0000             (      FLOODIT.ASM):00444         TEMP_WORD .dw 0
-1081 00               (      FLOODIT.ASM):00445         X_COORD .db 0
-1082 00               (      FLOODIT.ASM):00446         Y_COORD .db 0
-1083                  (      FLOODIT.ASM):00447         LEGEND: 
-1083 4D4F564553202020 (      FLOODIT.ASM):00448                 .STRZ "MOVES   /25   H=HELP  BREAK=QUIT"
+1093                  (      FLOODIT.ASM):00422         PLAY_WIN_SND:
+1093 8600             (      FLOODIT.ASM):00423                 LDA #0
+1095 B710C1           (      FLOODIT.ASM):00424                 STA TURNS
+1098 BD0E9B           (      FLOODIT.ASM):00425                 JSR CREATE_BOARD        
+109B 39               (      FLOODIT.ASM):00426                 RTS
+                      (      FLOODIT.ASM):00427                 
+                      (      FLOODIT.ASM):00428         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00429         ;       WASTE TIME
+                      (      FLOODIT.ASM):00430         ;       AN EMPTY LOOP TO WASTE TIME.  USED FOR
+                      (      FLOODIT.ASM):00431         ;       THE BLINKING WHEN THE PLAYER WINS
+                      (      FLOODIT.ASM):00432         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+109C                  (      FLOODIT.ASM):00433         WASTE_TIME:
+109C 86FF             (      FLOODIT.ASM):00434                 LDA #0xFF
+109E 4A               (      FLOODIT.ASM):00435         @lp     DECA    
+109F 8100             (      FLOODIT.ASM):00436                 CMPA #0
+10A1 26FB             (      FLOODIT.ASM):00437                 BNE @lp
+10A3 39               (      FLOODIT.ASM):00438                 RTS
+                      (      FLOODIT.ASM):00439         
+                      (      FLOODIT.ASM):00440         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00441         ; STRCPY:
+                      (      FLOODIT.ASM):00442         ; SRC AND DEST NEED TO BE STORED IN X,Y
+                      (      FLOODIT.ASM):00443         ; REGISTERS ARE PRESERVED.
+                      (      FLOODIT.ASM):00444         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
+10A4                  (      FLOODIT.ASM):00445         STRCPY:
+10A4 3436             (      FLOODIT.ASM):00446                 PSHS D,X,Y
+10A6 A680             (      FLOODIT.ASM):00447         @a      LDA ,X+
+10A8 9100             (      FLOODIT.ASM):00448                 CMPA 0
+10AA 2704             (      FLOODIT.ASM):00449                 BEQ STRCPY_DONE
+10AC A7A0             (      FLOODIT.ASM):00450                 STA ,Y+
+10AE 20F6             (      FLOODIT.ASM):00451                 BRA @a
+10B0                  (      FLOODIT.ASM):00452         STRCPY_DONE:
+10B0 3536             (      FLOODIT.ASM):00453                 PULS Y,X,D
+10B2 39               (      FLOODIT.ASM):00454                 RTS
+                      (      FLOODIT.ASM):00455         
+                      (      FLOODIT.ASM):00456         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
+                      (      FLOODIT.ASM):00457         ; program data
+                      (      FLOODIT.ASM):00458         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00459         ;       COLOR CODE ARRAY
+10B3                  (      FLOODIT.ASM):00460         COLORS:
+10B3 60               (      FLOODIT.ASM):00461                 .db GREEN       ; DARK GREEN
+10B4 80               (      FLOODIT.ASM):00462                 .db BLACK
+10B5 CF               (      FLOODIT.ASM):00463                 .db WHITE
+10B6 AF               (      FLOODIT.ASM):00464                 .db BLUE 
+10B7 9F               (      FLOODIT.ASM):00465                 .db YELLOW 
+10B8 BF               (      FLOODIT.ASM):00466                 .db RED
+                      (      FLOODIT.ASM):00467         ;       RANDOM NUMBER STUFF
+10B9                  (      FLOODIT.ASM):00468         FIB1:           
+10B9 01               (      FLOODIT.ASM):00469                 .db 1 ; 55
+10BA                  (      FLOODIT.ASM):00470         FIB2:
+10BA 01               (      FLOODIT.ASM):00471                 .db 1 ; 89
+10BB 00               (      FLOODIT.ASM):00472                 .db 0   ;padding so we can load nextfib into  X (which is 16 bits)
+10BC                  (      FLOODIT.ASM):00473         NEXTFIB:        
+10BC 01               (      FLOODIT.ASM):00474                 .db 1 
+10BD 00               (      FLOODIT.ASM):00475                 .db 0   ;padding so we can load nextfib into  X (which is 16 bits)
+10BE 00               (      FLOODIT.ASM):00476         OLD_COLOR .db 0 ;       ORIGINAL COLOR OF 0,0 BEFORE BUCKET FILL
+10BF 00               (      FLOODIT.ASM):00477         NEW_COLOR .db 0 ;       COLOR TO BUCKET FILL WITH
+10C0 20               (      FLOODIT.ASM):00478         CLR_COLOR .db 32        
+10C1 00               (      FLOODIT.ASM):00479         TURNS .db 0     ;
+10C2 00               (      FLOODIT.ASM):00480         TEMP    .db 0
+10C3 0000             (      FLOODIT.ASM):00481         TEMP_WORD .dw 0
+10C5 00               (      FLOODIT.ASM):00482         X_COORD .db 0
+10C6 00               (      FLOODIT.ASM):00483         Y_COORD .db 0
+10C7                  (      FLOODIT.ASM):00484         LEGEND: 
+10C7 4D4F564553202020 (      FLOODIT.ASM):00485                 .STRZ "MOVES   /25   H=HELP  BREAK=QUIT"
      2F3235202020483D
      48454C5020204252
      45414B3D51554954
      00
-                      (      FLOODIT.ASM):00449         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00450         ;       MARKED_FLAGS: WHERE EACH SQUARE HAS BEEN MARKED
-                      (      FLOODIT.ASM):00451         ;   BY THE FLOOD FILL ALGORITHM.
-                      (      FLOODIT.ASM):00452         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-10A4                  (      FLOODIT.ASM):00453         FLAGS .RS 480   ;
-                      (      FLOODIT.ASM):00454                 
-                      (      FLOODIT.ASM):00455         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      (      FLOODIT.ASM):00456         ;HELP SCREEN BUFFER.  THIS SECTION CONTAINS
-                      (      FLOODIT.ASM):00457         ;16 LINES OF 32 CHARACTERS.  WHEN THE HELP SCREEN IS
-                      (      FLOODIT.ASM):00458         ;DISPLAYED THE CONTENTS OF THIS MEMORY AND THE VRAM
-                      (      FLOODIT.ASM):00459         ;WILL BE SWITCHED
-                      (      FLOODIT.ASM):00460         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
-1284                  (      FLOODIT.ASM):00461         SCREEN_BUFFER:
-1284                  (      FLOODIT.ASM):00462                 .RS 512
-1484                  (      FLOODIT.ASM):00463         SCREEN_BUFFER_2: ;      USED FOR BLACK SCREEN WHEN BLINKING
-1484                  (      FLOODIT.ASM):00464                 .RS 512 
-1684                  (      FLOODIT.ASM):00465         INSTRUCTIONS1:
-1684 544845204F424A45 (      FLOODIT.ASM):00466                 .STRZ "THE OBJECTIVE IS TO MAKE THE "   
+                      (      FLOODIT.ASM):00486         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00487         ;       MARKED_FLAGS: WHERE EACH SQUARE HAS BEEN MARKED
+                      (      FLOODIT.ASM):00488         ;   BY THE FLOOD FILL ALGORITHM.
+                      (      FLOODIT.ASM):00489         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+10E8                  (      FLOODIT.ASM):00490         FLAGS .RS 480   ;
+                      (      FLOODIT.ASM):00491                 
+                      (      FLOODIT.ASM):00492         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      (      FLOODIT.ASM):00493         ;HELP SCREEN BUFFER.  THIS SECTION CONTAINS
+                      (      FLOODIT.ASM):00494         ;16 LINES OF 32 CHARACTERS.  WHEN THE HELP SCREEN IS
+                      (      FLOODIT.ASM):00495         ;DISPLAYED THE CONTENTS OF THIS MEMORY AND THE VRAM
+                      (      FLOODIT.ASM):00496         ;WILL BE SWITCHED
+                      (      FLOODIT.ASM):00497         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+12C8                  (      FLOODIT.ASM):00498         SCREEN_BUFFER:
+12C8                  (      FLOODIT.ASM):00499                 .RS 512
+14C8                  (      FLOODIT.ASM):00500         SCREEN_BUFFER_2: ;      USED FOR BLACK SCREEN WHEN BLINKING
+14C8                  (      FLOODIT.ASM):00501                 .RS 512 
+16C8                  (      FLOODIT.ASM):00502         INSTRUCTIONS1:
+16C8 544845204F424A45 (      FLOODIT.ASM):00503                 .STRZ "THE OBJECTIVE IS TO MAKE THE "   
      4354495645204953
      20544F204D414B45
      205448452000
-16A2                  (      FLOODIT.ASM):00467         INSTRUCTIONS2:
-16A2 53435245454E2041 (      FLOODIT.ASM):00468                 .STRZ "SCREEN ALL ONE COLOR.  YOU CAN"
+16E6                  (      FLOODIT.ASM):00504         INSTRUCTIONS2:
+16E6 53435245454E2041 (      FLOODIT.ASM):00505                 .STRZ "SCREEN ALL ONE COLOR.  YOU CAN"
      4C4C204F4E452043
      4F4C4F522E202059
      4F552043414E00
-16C1                  (      FLOODIT.ASM):00469         INSTRUCTIONS3:
-16C1 444F205448495320 (      FLOODIT.ASM):00470                 .STRZ "DO THIS BY STRATEGICALLY"
+1705                  (      FLOODIT.ASM):00506         INSTRUCTIONS3:
+1705 444F205448495320 (      FLOODIT.ASM):00507                 .STRZ "DO THIS BY STRATEGICALLY"
      4259205354524154
      45474943414C4C59
      00
-16DA                  (      FLOODIT.ASM):00471         INSTRUCTIONS4:
-16DA 4255434B45542046 (      FLOODIT.ASM):00472                 .STRZ "BUCKET FILLING THE TOP LEFT"
+171E                  (      FLOODIT.ASM):00508         INSTRUCTIONS4:
+171E 4255434B45542046 (      FLOODIT.ASM):00509                 .STRZ "BUCKET FILLING THE TOP LEFT"
      494C4C494E472054
      484520544F50204C
      45465400
-16F6                  (      FLOODIT.ASM):00473         INSTRUCTIONS5:
-16F6 5351554152452E20 (      FLOODIT.ASM):00474                 .STRZ "SQUARE. HOWEVER, YOU ONLY HAVE"
+173A                  (      FLOODIT.ASM):00510         INSTRUCTIONS5:
+173A 5351554152452E20 (      FLOODIT.ASM):00511                 .STRZ "SQUARE. HOWEVER, YOU ONLY HAVE"
      484F57455645522C
      20594F55204F4E4C
      59204841564500
-1715                  (      FLOODIT.ASM):00475         INSTRUCTIONS6:
-1715 3235205455524E53 (      FLOODIT.ASM):00476                 .STRZ "25 TURNS, SO CHOOSE YOUR MOVES"
+1759                  (      FLOODIT.ASM):00512         INSTRUCTIONS6:
+1759 3235205455524E53 (      FLOODIT.ASM):00513                 .STRZ "25 TURNS, SO CHOOSE YOUR MOVES"
      2C20534F2043484F
      4F534520594F5552
      204D4F56455300
-1734                  (      FLOODIT.ASM):00477         INSTRUCTIONS7:
-1734 574953454C592E20 (      FLOODIT.ASM):00478                 .STRZ "WISELY. USE THE FOLLOWING KEYS"
+1778                  (      FLOODIT.ASM):00514         INSTRUCTIONS7:
+1778 574953454C592E20 (      FLOODIT.ASM):00515                 .STRZ "WISELY. USE THE FOLLOWING KEYS"
      5553452054484520
      464F4C4C4F57494E
      47204B45595300
-1753                  (      FLOODIT.ASM):00479         INSTRUCTIONS8:  
-1753 58204B4559203D20 (      FLOODIT.ASM):00480                 .STRZ "X KEY = BLACK. B=BLUE"
+1797                  (      FLOODIT.ASM):00516         INSTRUCTIONS8:  
+1797 58204B4559203D20 (      FLOODIT.ASM):00517                 .STRZ "X KEY = BLACK. B=BLUE"
      424C41434B2E2042
      3D424C554500
-1769                  (      FLOODIT.ASM):00481         INSTRUCTIONS9:
-1769 57204B4559203D20 (      FLOODIT.ASM):00482                 .STRZ "W KEY = WHITE. C=CYAN"
+17AD                  (      FLOODIT.ASM):00518         INSTRUCTIONS9:
+17AD 57204B4559203D20 (      FLOODIT.ASM):00519                 .STRZ "W KEY = WHITE. C=CYAN"
      57484954452E2043
      3D4359414E00
-177F                  (      FLOODIT.ASM):00483         INSTRUCTIONS10:
-177F 47204B4559203D20 (      FLOODIT.ASM):00484                 .STRZ "G KEY = GREEN. Y=YELLOW"
+17C3                  (      FLOODIT.ASM):00520         INSTRUCTIONS10:
+17C3 47204B4559203D20 (      FLOODIT.ASM):00521                 .STRZ "G KEY = GREEN. Y=YELLOW"
      475245454E2E2059
      3D59454C4C4F5700
-1797                  (      FLOODIT.ASM):00485         INSTRUCTIONS_11:
-1797 5052455353205350 (      FLOODIT.ASM):00486                 .STRZ "PRESS SPACE TO RETURN TO GAME."
+17DB                  (      FLOODIT.ASM):00522         INSTRUCTIONS_11:
+17DB 5052455353205350 (      FLOODIT.ASM):00523                 .STRZ "PRESS SPACE TO RETURN TO GAME."
      41434520544F2052
      455455524E20544F
      2047414D452E00
-                      (      FLOODIT.ASM):00487                 
-                      (      FLOODIT.ASM):00488                 END START
+                      (      FLOODIT.ASM):00524                 
+                      (      FLOODIT.ASM):00525                 END START
