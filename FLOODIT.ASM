@@ -122,19 +122,34 @@ DONE:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LOOP TO FILL THE SCREEN WITH RANDOM COLOR CODES
+; REGISTERS ARE CLOBBERED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 CREATE_BOARD:
+	LDA #BLACK
+	STA CLR_COLOR
+	LDX #VRAM
+	JSR CLS
 	LDD #0		; loop counter
-	LDY #1024	; load addr to copy to
-@lp	PSHS D		; save A (loop counter)
+	LDY #(1024+39)	; load addr to copy to
+
+@ot PSHS A		; save A (loop counter)
+	;DO INNER
+	LDB #0
+@in	PSHS B
 	JSR RND5	;GET RND COLOR
 	LDX NEXTFIB-1
 	LDA COLORS,X
 	STA ,Y+	; copy char to location stored in Y increment Y
-	PULS D	; restore A (loop counter)
-	ADDD	#1 ; increment loop counter
-	CMPD #480	; done (hit bottom of screen)?
-	BNE @lp
+	PULS B
+	INCB
+	CMPB #16
+	BNE @in
+	LEAY 16,Y ;BUMP Y TO NEXT ROW
+	;END INNER
+	PULS A
+	INCA
+	CMPA #14
+	BNE @ot	
 	RTS
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -220,12 +235,13 @@ START_FILL:
 	INC TURNS
 	JSR CLEAR_FLAGS
 	;SAVE THE ORIGNAL COLOR
-	LDA VRAM
+	LDA VRAM+39
 	STA OLD_COLOR
 	;MAKE 0,0 THE NEW COLOR
-	LDA #0
-	PSHU A
-	PSHU A
+	LDA #7
+	PSHU A	; X
+	LDA #1
+	PSHU A	; Y
 	JSR BUCKET_FILL
 	JSR CHECK_WIN
 	PULU A 	; GET RETURN CODE
@@ -249,13 +265,13 @@ BUCKET_FILL:
 	STA Y_COORD
 	PULU A
 	STA X_COORD
-	;SEE IF X,Y ARE ON THE BOARD	
-	CMPA #0xFF	; -1
+	;SEE IF X IS ON THE BOARD	
+	CMPA #6		; 	LEFT EDGE
 	LBEQ @x
-	CMPA #32	; OFF RIGHT EDGE	
+	CMPA #24	; OFF RIGHT EDGE	
 	LBEQ @x
 	;VERIFY Y (WHICH IS IN B)
-	CMPB #0xFF	; -1
+	CMPB #0		; TOP ROW
 	BEQ @x		;OFF TOP
 	CMPB #15	; BOTTOM ROW
 	BEQ @x		;OFF BOTTOM
