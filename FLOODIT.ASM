@@ -4,6 +4,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 KBSCAN 	EQU $A1CB
 LAST_LINE EQU (1024+480) 
+TURNS_COORD EQU (1024+487)
 VRAM_END EQU (1024+512)
 LINE_ONE_END EQU (1024+32)
 TOP_SQUARE EQU (1024+40)
@@ -234,6 +235,9 @@ CLS:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 START_FILL:
 	INC TURNS
+	LDA TURNS
+	LDX #TURNS_COORD
+	JSR ATOI
 	JSR CLEAR_FLAGS
 	;SAVE THE ORIGNAL COLOR
 	LDA VRAM+39
@@ -468,6 +472,35 @@ STRCPY:
 	STA ,Y+
 	BRA @a
 @x	PULS Y,X,D
+	RTS
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;DRAWS AN 8 BsIT NUMBER TO THE SCREEN
+;ONLY WORKS FOR POSITIVE NUMBERS
+;A CONTAINS NUMBER
+;X CONTAINS RIGHT EDGE OF SCREEN LOCATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ATOI:
+@lp	JSR A_DIV_10	;DIVIDE BY 10, REMAINDER IN B
+	ADDB #48		;CONVERT B TO CHAR CODE (NUMBERS START AT 48)
+	STB	,X			;DRAW TO SCREEN
+	LEAX -1,X		;SHIFT LEFT ON SCREEN
+	CMPA #0			;DONE?
+	BNE @lp
+	RTS
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;DIVIDES A BY TEN AND PUTS THE REMAINDER IN B
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+A_DIV_10:
+	LDB #0
+@lp CMPA #10
+	BLT @x		; 10 WON'T GO IN, DONE
+	SUBA #10 	; SUBTRACT 10
+	INCB		
+	BRA @lp		
+@x	
+	EXG	B,A
 	RTS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
