@@ -33,6 +33,8 @@ MAX_TURNS EQU 50
 START 
 	LDU #0x7FFF ; setup user stack
 	CLR TURNS	; SET TURNS TO 0	
+	LDA #0			;CLEAR PREVIOUS QUIT_FLAG
+	STA QUIT_FLAG
 	;COPY THE INTRO TO SCREEN MEMORY
 	LDY #SCREEN_BUFFER_2
 	JSR SWITCH_BUFFERS
@@ -88,12 +90,11 @@ KB_LOOP:
 	STA NEW_COLOR	
 	JSR START_FILL
 	JMP KB_LOOP	
-@f	CMPA #KEY_C		;  
+@f	CMPA #KEY_C		  
 	BNE @g
 	LDA #CYAN
 	STA NEW_COLOR	
 	JSR START_FILL
-	JMP KB_LOOP	
 @g	JMP KB_LOOP
 DONE:	
 	LDA #GREEN
@@ -107,6 +108,8 @@ DONE:
 ; REGISTERS ARE CLOBBERED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 CREATE_BOARD:
+	LDA #0
+	STA TURNS
 	LDA #BLACK
 	STA CLR_COLOR
 	LDX #VRAM
@@ -231,12 +234,14 @@ START_FILL:
 	PULU A 	; GET RETURN CODE
 	CMPA #1	; 1 IS A WIN
 	BNE @no
-	JSR RESTART_GAME	;  PLAY VICTORY MUSIC & RESTART
+	JSR PLAY_WIN_MUSIC
+	JSR WAIT_ANY_KEY
 	BRA @x
 @no	LDA TURNS			; CHECK THE TURN
 	CMPA #25			;
 	BNE @x				; STILL PLAYING
-	JSR SHOW_GAME_OVER	;
+	JSR SHOW_LOSE_MESSAGE
+	JSR WAIT_ANY_KEY
 @x	RTS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -421,18 +426,23 @@ RESTOREXY:
 	RTS	
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;RESTART_GAME
+;HANDLE_GAME_OVER
+;CALLED WHEN THE PLAYER WINS OR LOSES
+;WAITS FOR ANY KEY AND SETS THE QUIT FLAG
+;IF NEEDED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-RESTART_GAME:
-	JSR PLAY_WIN_MUSIC
-	LDA #0
-	STA TURNS
+HANDLE_GAME_OVER:
+	JSR WAIT_ANY_KEY
+	LDA QUIT_FLAG
+	CMPA #1
+	BEQ @x
 	JSR CREATE_BOARD	
-	RTS
+@x	RTS
+	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;PUTS THE GAME OVER MESSAGE ON THE SCREEN
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-SHOW_GAME_OVER:
+SHOW_LOSE_MESSAGE:
 	LDX #GAME_OVER_LINE_1
 	LDY #(1034+256)
 	JSR STRCPY
@@ -445,6 +455,7 @@ SHOW_GAME_OVER:
 	LDY #(1034+256+64)
 	JSR STRCPY
 	RTS
+	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;	WASTE TIME
 ;	AN EMPTY LOOP TO WASTE TIME.  USED FOR
@@ -502,6 +513,20 @@ A_DIV_10:
 @x	
 	EXG	B,A
 	RTS
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;WAITS UNTIL A KEY IS PRESSED.
+;IF THE KEY WAS ESC, THE QUIT_FLAG IS SET TO 1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+WAIT_ANY_KEY
+@l	JSR KBSCAN  ; PUTS KEYCODE INTO A - 0 = NO KEY
+	CMPA 0
+	BEQ @l
+	CMPA KEY_ESC
+	BNE @x
+	LDA #1
+	STA QUIT_FLAG	
+@x	RTS
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;REGISTERS ARE PRESERVED
@@ -583,6 +608,7 @@ SND_DELAY:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 ; program data
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+QUIT_FLAG	.db  0x00
 ;	COLOR CODE ARRAY
 COLORS:
 	.db GREEN	; DARK GREEN
