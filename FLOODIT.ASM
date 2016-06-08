@@ -47,8 +47,10 @@ START
 	BNE @sp
 	;START GAME
 	JSR CREATE_BOARD
-	JSR DRAW_LEGEND
 KB_LOOP:
+	LDA QUIT_FLAG ; SEE IF THE PREVIOUS MOVE SET THE QUIT FLAG
+	CMPA #1
+	BEQ DONE	; IF NOT QUITTING, FALL THROUGH AND CHECK KB
 	JSR KBSCAN  ; PUTS KEYCODE INTO A - 0 = NO KEY
 	CMPA 0	
 	BEQ KB_LOOP	; IF 0 (NO KEY), REPEAT LOOP
@@ -116,7 +118,6 @@ CREATE_BOARD:
 	JSR CLS
 	LDD #0		; loop counter
 	LDY #(1024+39)	; load addr to copy to
-
 @ot PSHS A		; save A (loop counter)
 	;DO INNER
 	LDB #0
@@ -135,6 +136,10 @@ CREATE_BOARD:
 	INCA
 	CMPA #14
 	BNE @ot	
+	JSR DRAW_LEGEND  ; CLEAR BOTTOM LINE
+	LDA TURNS		; OVERLAY TURNS	ON LEGEND
+	LDX #TURNS_COORD
+	JSR	ATOI		
 	RTS
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -240,8 +245,7 @@ START_FILL:
 @no	LDA TURNS			; CHECK THE TURN
 	CMPA #25			;
 	BNE @x				; STILL PLAYING
-	JSR SHOW_LOSE_MESSAGE
-	JSR WAIT_ANY_KEY
+	JSR HANDLE_GAME_OVER
 @x	RTS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -432,6 +436,7 @@ RESTOREXY:
 ;IF NEEDED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 HANDLE_GAME_OVER:
+	JSR SHOW_LOSE_MESSAGE
 	JSR WAIT_ANY_KEY
 	LDA QUIT_FLAG
 	CMPA #1
@@ -520,9 +525,9 @@ A_DIV_10:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 WAIT_ANY_KEY
 @l	JSR KBSCAN  ; PUTS KEYCODE INTO A - 0 = NO KEY
-	CMPA 0
+	CMPA #0
 	BEQ @l
-	CMPA KEY_ESC
+	CMPA #KEY_ESC
 	BNE @x
 	LDA #1
 	STA QUIT_FLAG	
