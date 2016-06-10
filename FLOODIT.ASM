@@ -34,6 +34,7 @@ MAX_TURNS EQU 50
 START 
 	LDU #0x7FFF ; setup user stack
 	CLR TURNS	; SET TURNS TO 0	
+	JSR SEED_RND 
 	LDA #0			;CLEAR PREVIOUS QUIT_FLAG
 	STA QUIT_FLAG
 	;COPY THE INTRO TO SCREEN MEMORY
@@ -141,7 +142,16 @@ CREATE_BOARD:
 	LDX #TURNS_COORD
 	JSR	ATOI		
 	RTS
-	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;PUTS INITIAL VALUES INTO FIB 1 AND FIB 2016
+;FIB1 IS LOADED WITH HEX 113 WHICH IS A BASIC TIMER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SEED_RND:
+	PSHS A
+	LDA $113
+	STA FIB1
+	PULS A
+	RTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;PUTS THE NEXT FIBONACCI NUMBER IN A AND NEXTFIB
 ;NO REGISTERS AFFECTED
