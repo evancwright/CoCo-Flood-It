@@ -117,9 +117,9 @@ CREATE_BOARD:
 	STA CLR_COLOR
 	LDX #VRAM
 	JSR CLS
-	LDD #0		; loop counter
+	LDD #0			; loop counter
 	LDY #(1024+39)	; load addr to copy to
-@ot PSHS A		; save A (loop counter)
+@ot PSHS A			; save A (loop counter)
 	;DO INNER
 	LDB #0
 @in	PSHS B
@@ -249,9 +249,9 @@ START_FILL:
 	JSR ATOI
 	JSR CLEAR_FLAGS
 	;MAKE 0,0 THE NEW COLOR (ACTUALLY 7,1 ON SMALLER BOARD)
-	LDA #7
+	LDA #10
 	PSHU A	; X
-	LDA #1
+	LDA #5
 	PSHU A	; Y
 	JSR BUCKET_FILL
 	JSR CHECK_WIN
@@ -295,7 +295,7 @@ BUCKET_FILL:
 	;SEE IF IT'S BEEN MARKED ALREADY
 	;(COMPUTE OFFSET = Y*32+X)
 	LDA #32
-	MUL		; D = Y * 32
+	MUL		; D = Y(WHICH IS IN B) * 32 (WHICH IS IN A)
 	ADDB X_COORD	
 	BCC @nc	; NO CARRY
 	INCA	; ADD CARRY TO A
