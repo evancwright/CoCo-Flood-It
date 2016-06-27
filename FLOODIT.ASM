@@ -12,8 +12,6 @@ SND_REPEAT_COUNT EQU $3F00
 ;	SND_DELAY EQU $3F02
 SND_START_ADDR EQU $3F03
 SND_END_ADDR EQU $3F05
-VARIABLE_RAM_ADDR EQU 0x0E00  ; VARIABLE SPACE FOR CARTRIDGE RAM (MADE UP)
-
 
 	INCLUDE KEYS.ASM
 	INCLUDE SNDDEFS.ASM
@@ -208,19 +206,36 @@ DRAW_LEGEND:
 ; REGISTERS GET CLOBBERED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 FILL_INTRO:
-	LDY  #(VRAM+32)
+	LDY  #(VRAM+96)
 @lp LDA ,Y			; LOAD SCREEN BYTE
 	CMPA #0x8F		; GREEN?
 	BEQ @pl	
+	JSR PLAY_BEEP
 	LDA #BLUE		; YES, MAKE IT BLUE
 	STA ,Y
 @pl LEAY 1,Y		;INC Y	
 	JSR WASTE_TIME
 	JSR WASTE_TIME		
-	JSR WASTE_TIME	
-	CMPY #1312	;DONE (just below title on screen)
+	;	JSR WASTE_TIME	
+	CMPY #1280	;DONE (just below title on screen)
 	BNE @lp
 	RTS
+	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; PLAY BEEP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+PLAY_BEEP
+	PSHS D
+	LDB FILL_FREQ	; PLAY A BEEP
+	ADDB #1		; INCREASE TONE BY 10 EACH STEP Produces Beep of length B, pitch in $008c
+	STB FILL_FREQ	; SAVE IT FOR NEXT LOOP	
+	STB BEEP_FREQ	; STORE FREQ IN 8C  (8C is multiplied into 8D)
+	LDB #1		; BEEP LENGTH OF 1
+	ANDCC #$EF		; TURN OFF BIT IN CC TO ENABLE INTERRUPT (TO COUNT DOWN SND TIMER)
+	JSR BEEP_SUB	
+	PULS D
+	RTS	
+
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;CLS
@@ -706,19 +721,7 @@ SND_DELAY:
 	PULS A		; 4
 	RTS			; 5
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;THIS CODE COPIES VARIABLES FROM THE PROGRAM
-;ROM INTO THE RAM
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-LOAD_VARS:
-	PSHS X,Y
-	LDX #0
-@lp LDY VARIABLE_AREA_START,X
-	STY VARIABLE_RAM_ADDR,X
-	CMPX VAR_SPACE_SIZE
-	BLT @lp
-	PULS Y,X
-	RTS
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 ; STATIC PROGRAM DATA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -881,6 +884,7 @@ SND_TABL
 ; TO GET THE OUTER LOOP TIME (THE TONE LENGHT), JUST USE
 ; THE FREQUENCY FROM THE TABLE ABOVE (WILL REQUIRE 16 BITS)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+FILL_FREQ .DB 0x01
 FREQ .DB 255	
 TONE_LENGTH .DW 0x00FF
 VARIABLE_AREA_END
