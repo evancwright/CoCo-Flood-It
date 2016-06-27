@@ -2,6 +2,8 @@
 ; DEFINITIONS FOR WORKING WITH SOUND
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+BEEP_SUB	EQU  $A951		; Produces Beep of length B, pitch in $008c
+BEEP_FREQ	EQU $008C
 PIA_CTRL1 		EQU $FF01  		; BIT 
 PIA_CTRL2 		EQU $FF03  		; BIT 
 PIA_DATA  		EQU $FF20 		;  PIA DATA BYTE
