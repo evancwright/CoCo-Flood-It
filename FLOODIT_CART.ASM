@@ -212,16 +212,10 @@ DRAW_LEGEND:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 FILL_INTRO:
 	LDY  #(VRAM+96)
-@lp LDB FILL_FREQ	; PLAY A BEEP
-	ADDB #1		; INCREASE TONE BY 10 EACH STEP Produces Beep of length B, pitch in $008c
-	STB FILL_FREQ	; SAVE IT FOR NEXT LOOP	
-	STB BEEP_FREQ	; STORE FREQ IN 8C  (8C is multiplied into 8D)
-	LDB #1		; BEEP LENGTH OF 1
-	ANDCC #$EF		; TURN OFF BIT IN CC TO ENABLE INTERRUPT (TO COUNT DOWN SND TIMER)
-	JSR BEEP_SUB	
-	LDA ,Y			; LOAD SCREEN BYTE
+@lp LDA ,Y			; LOAD SCREEN BYTE
 	CMPA #0x8F		; GREEN?
 	BEQ @pl	
+	JSR PLAY_BEEP
 	LDA #BLUE		; YES, MAKE IT BLUE
 	STA ,Y
 @pl LEAY 1,Y		;INC Y	
@@ -232,6 +226,21 @@ FILL_INTRO:
 	BNE @lp
 	RTS
 	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; PLAY BEEP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+PLAY_BEEP
+	PSHS D
+	LDB FILL_FREQ	; PLAY A BEEP
+	ADDB #1		; INCREASE TONE BY 10 EACH STEP Produces Beep of length B, pitch in $008c
+	STB FILL_FREQ	; SAVE IT FOR NEXT LOOP	
+	STB BEEP_FREQ	; STORE FREQ IN 8C  (8C is multiplied into 8D)
+	LDB #1		; BEEP LENGTH OF 1
+	ANDCC #$EF		; TURN OFF BIT IN CC TO ENABLE INTERRUPT (TO COUNT DOWN SND TIMER)
+	JSR BEEP_SUB	
+	PULS D
+	RTS	
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;CLS
 ;CLEARS SCREEN WITH COLOR STORED IN CLR_COLOR
@@ -898,7 +907,7 @@ SND_TABL
 ; TO GET THE OUTER LOOP TIME (THE TONE LENGHT), JUST USE
 ; THE FREQUENCY FROM THE TABLE ABOVE (WILL REQUIRE 16 BITS)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-FILL_FREQ .DB 0x01	
+FILL_FREQ .DW 0x0000	
 FREQ .DB 255	
 TONE_LENGTH .DW 0x00FF
 VARIABLE_AREA_END 
