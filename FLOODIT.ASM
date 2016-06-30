@@ -258,8 +258,7 @@ CLS:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 START_FILL:
 	;SAVE THE ORIGNAL COLOR
-	;LDA VRAM+39
-	LDA VRAM+40
+	LDA VRAM+39
 	STA OLD_COLOR
 	;MAKE SURE THE OLD COLOR AND NEW COLOR ARE NOT THE SAME
 	CMPA NEW_COLOR
@@ -282,7 +281,7 @@ START_FILL:
 	PULU A 	; GET RETURN CODE
 	CMPA #1	; 1 IS A WIN
 	BNE @no
-	JSR PLAY_WIN_MUSIC
+;	JSR PLAY_WIN_MUSIC
 	JSR WAIT_ANY_KEY
 	BRA @x
 @no	LDA TURNS			; CHECK THE TURN
@@ -628,6 +627,15 @@ WAIT_ANY_KEY
 	LDA #1
 	STA QUIT_FLAG	
 @x	RTS
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ASSUMES FREQ AND TIME ARE PUSHED ONTO USER STACK
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+BEEP
+	JSR ENABLE_SND
+	JSR BEEP_SUB
+	JSR DISABLE_SND
+	RTS
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;PLAYS THE WIN MUSIC 
@@ -697,6 +705,7 @@ SOUND_PLAY
 	BNE @i			; KEEP GOING
 	LEAY -1,Y		; DEC MAIN LP COUNTR (SETS Z FLAG)
 	BNE @o			; START OVER AT BEGINNING OF SOUND DATA
+	JSR $A974		; TURN OFF SOUND (ROM ROUTINE)
 	RTS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
